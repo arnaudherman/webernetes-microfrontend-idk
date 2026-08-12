@@ -293,6 +293,45 @@ etape("la combinaison servie a été assemblée", () => {
   return { ok: true };
 });
 
+/**
+ * Les deux essais de panne reposent sur des montages qui peuvent se dégrader en
+ * silence : une URL qui cesse d'exister, ou une origine qui se met à répondre
+ * correctement. Dans les deux cas l'essai continue de produire quelque chose, et ce
+ * quelque chose n'est plus la démonstration. C'est arrivé une fois.
+ */
+etape("le shell ne code aucune URL en dur", () => {
+  const resultat = commande("grep", ["-c", "localhost:51", join(MAQUETTE, "shell", "shell.js")]);
+  const nombre = Number(resultat.sortie.trim() || "0");
+  return nombre === 0
+    ? { ok: true }
+    : { ok: false, detail: `${nombre} URL codée(s) en dur dans shell.js — elles doivent venir du manifeste` };
+});
+
+etape("le manifeste décrit les deux montages de panne", () => {
+  const resultat = commande("node", [
+    "-e",
+    "const{readFileSync}=require('node:fs');" +
+      "const m=JSON.parse(readFileSync('shell/manifeste.json','utf8'));" +
+      "if(!m.concurrent?.url)throw new Error('entrée concurrent absente');" +
+      "if(!m.sansCors?.url)throw new Error('entrée sansCors absente');" +
+      "console.log('concurrent et sansCors présents')",
+  ], MAQUETTE);
+  if (!resultat.ok) return resultat;
+  console.log(`         │ ${resultat.sortie.trim()}`);
+  return { ok: true };
+});
+
+etape("l'origine sans CORS l'est toujours", () => {
+  // Si quelqu'un activait CORS sur ce port, l'essai chargerait le module avec succès
+  // et ne démontrerait plus rien — en ayant l'air de fonctionner.
+  const declaration = commande("grep", ["-c", "cors: false", join(MAQUETTE, "servir.mjs")]);
+  const fixture = fichierNonVide("maquette-independance/equipe-sans-cors/mf-orphelin.js", 50);
+  if (Number(declaration.sortie.trim() || "0") !== 1) {
+    return { ok: false, detail: "servir.mjs ne déclare plus exactement une origine « cors: false »" };
+  }
+  return fixture.ok ? { ok: true } : fixture;
+});
+
 etape("aucun artefact n'embarque de copie du socle", () => {
   for (const fichier of [
     "maquette-independance/equipe-tableau/dist/mf-tableau.js",

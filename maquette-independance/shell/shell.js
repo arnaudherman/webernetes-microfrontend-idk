@@ -338,7 +338,11 @@ document.querySelector("#concurrent").addEventListener("click", async () => {
 });
 
 document.querySelector("#sans-cors").addEventListener("click", async () => {
-  const url = "http://localhost:5105/mf-orphelin.js";
+  const url = manifesteCharge?.sansCors?.url;
+  if (!url) {
+    noter(journalChargement, "echec", "manifeste", "aucune entrée « sansCors » dans le manifeste");
+    return;
+  }
   try {
     await import(url);
     noter(journalChargement, "ok", "chargé", `origine sans CORS  ${url}`);

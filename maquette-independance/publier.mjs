@@ -165,10 +165,25 @@ const concurrent = concurrentPublie && {
   integrity: concurrentPublie.integrity,
 };
 
+/**
+ * L'origine sans CORS est un MONTAGE, pas un artefact publié : elle sert un module
+ * parfaitement valide depuis une origine délibérément mal configurée, pour que l'essai
+ * montre une panne de frontière qualifiable.
+ *
+ * Elle entre quand même dans le manifeste. Une URL codée en dur dans le shell avait
+ * déjà cessé d'exister une fois, silencieusement, le jour où les serveurs ont changé
+ * de racine — et l'essai continuait de produire une erreur, simplement plus la bonne.
+ *
+ * Pas d'empreinte d'intégrité : le navigateur n'obtiendra jamais ce fichier, donc il
+ * n'aura jamais rien à vérifier. En donner une laisserait croire à un contrôle.
+ */
+const sansCors = { url: "http://localhost:5105/mf-orphelin.js" };
+
 const manifeste = {
   socle: { version: SOCLE.version, url: SOCLE.url, integrity: integriteSocle },
   fragments,
   ...(concurrent ? { concurrent } : {}),
+  sansCors,
 };
 
 await writeFile(
