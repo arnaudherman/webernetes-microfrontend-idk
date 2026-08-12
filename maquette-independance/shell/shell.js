@@ -155,6 +155,8 @@ async function diagnostiquer(url, integriteAttendue) {
 
 /* ------------------------------------------------------- chargement initial */
 
+let manifesteCharge;
+
 async function charger() {
   let manifeste;
   try {
@@ -165,6 +167,7 @@ async function charger() {
     return;
   }
 
+  manifesteCharge = manifeste;
   const fragments = Object.entries(manifeste.fragments ?? {});
 
   noter(
@@ -316,7 +319,11 @@ document.querySelector("#recenser").addEventListener("click", () => {
 });
 
 document.querySelector("#concurrent").addEventListener("click", async () => {
-  const url = "http://localhost:5104/mf-tableau.js";
+  const url = manifesteCharge?.concurrent?.url;
+  if (!url) {
+    noter(journalChargement, "echec", "manifeste", "aucune entrée « concurrent » dans le manifeste");
+    return;
+  }
   try {
     await import(url);
     noter(journalChargement, "ok", "chargé", `dépôt concurrent  ${url}`);

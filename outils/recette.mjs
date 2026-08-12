@@ -191,10 +191,13 @@ etape("manifeste cohérent avec les artefacts publiés", () => {
     "const{readFileSync}=require('node:fs');const{createHash}=require('node:crypto');" +
       "const m=JSON.parse(readFileSync('shell/manifeste.json','utf8'));" +
       "const c=[['socle',m.socle],...Object.entries(m.fragments)];" +
+      "if(!m.concurrent)throw new Error('entrée concurrent absente du manifeste');" +
+      "c.push(['concurrent',m.concurrent]);" +
       "for(const[n,e]of c){" +
       "const p=e.url.replace(/^http:\\/\\/localhost:5101\\//,'equipe-tableau/publie/')" +
       ".replace(/^http:\\/\\/localhost:5102\\//,'equipe-filtres/publie/')" +
       ".replace(/^http:\\/\\/localhost:5106\\//,'equipe-calcul/publie/')" +
+      ".replace(/^http:\\/\\/localhost:5104\\//,'depot-concurrent/publie/')" +
       ".replace(/^http:\\/\\/localhost:5103\\//,'socle/');" +
       "const h='sha384-'+createHash('sha384').update(readFileSync(p)).digest('base64');" +
       "if(h!==e.integrity)throw new Error(n+' : empreinte du manifeste != artefact '+p);}" +

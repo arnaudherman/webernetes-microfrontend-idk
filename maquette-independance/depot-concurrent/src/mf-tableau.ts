@@ -14,13 +14,33 @@ import { abonner } from "@socle/bus";
  *
  * Le correctif standard — les registres à portée — est bloqué par Firefox depuis
  * mars 2026. Il n'est donc pas utilisable en production aujourd'hui.
+ *
+ * Ce fragment ne monte jamais dans cette maquette, puisque `define` lève avant. Il est
+ * néanmoins écrit correctement : le Shadow DOM est attaché dans le constructeur, et
+ * l'abonnement est libéré au démontage. Un fragment de démonstration qui montrerait un
+ * mauvais exemple serait un mauvais fragment de démonstration.
  */
-
 class MfTableauConcurrent extends HTMLElement {
+  readonly #racine: ShadowRoot;
+  #desabonnements: (() => void)[] = [];
+
+  constructor() {
+    super();
+    // Dans le constructeur, pas dans connectedCallback : un élément peut être retiré
+    // puis réinséré, et `attachShadow` lève s'il est appelé deux fois.
+    this.#racine = this.attachShadow({ mode: "open" });
+  }
+
   connectedCallback(): void {
-    const racine = this.attachShadow({ mode: "open" });
-    racine.textContent = "tableau, version de l'équipe concurrente";
-    abonner("filtre:change", "mf-tableau-concurrent", () => {});
+    this.#racine.textContent = "tableau, version de l'équipe concurrente";
+    this.#desabonnements.push(
+      abonner("filtre:change", "mf-tableau-concurrent", () => {}),
+    );
+  }
+
+  disconnectedCallback(): void {
+    for (const desabonner of this.#desabonnements) desabonner();
+    this.#desabonnements = [];
   }
 }
 

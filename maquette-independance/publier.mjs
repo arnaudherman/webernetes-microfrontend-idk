@@ -154,9 +154,21 @@ for (const publie of publies) {
   };
 }
 
+// Le dépôt concurrent n'est pas un fragment monté : il est chargé à la demande par un
+// bouton, pour démontrer le conflit de nom de balise. Il a néanmoins besoin d'une URL
+// versionnée comme les autres — coder son adresse en dur dans le shell l'avait déjà
+// cassé une fois, silencieusement, le jour où les serveurs sont passés de dist à publie.
+const concurrentPublie = publies.find((p) => p.nom === "depot-concurrent");
+const concurrent = concurrentPublie && {
+  version: concurrentPublie.version,
+  url: `http://localhost:${concurrentPublie.port}/${concurrentPublie.version}/${concurrentPublie.fichier}`,
+  integrity: concurrentPublie.integrity,
+};
+
 const manifeste = {
   socle: { version: SOCLE.version, url: SOCLE.url, integrity: integriteSocle },
   fragments,
+  ...(concurrent ? { concurrent } : {}),
 };
 
 await writeFile(
@@ -194,6 +206,7 @@ async function reecrireCarte(fichier, carte) {
 
 const integrite = { [SOCLE.url]: integriteSocle };
 for (const fragment of Object.values(fragments)) integrite[fragment.url] = fragment.integrity;
+if (concurrent) integrite[concurrent.url] = concurrent.integrity;
 
 await reecrireCarte("index.html", {
   imports: { "@socle/bus": SOCLE.url },
