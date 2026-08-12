@@ -9,6 +9,8 @@
  * Il n'y a pas de faute d'implémentation à trouver dans ce fichier. C'est le propos.
  */
 
+import { valider, VERSION_CONTRATS } from "./contrats.js";
+
 export const VERSION = "2.0";
 export const identifiant = `socle@${VERSION}#${Math.random().toString(36).slice(2, 7)}`;
 
@@ -31,12 +33,28 @@ export function abonner(evenement, idAbonne, gestionnaire) {
 export function publier(evenement, charge, source) {
   const destinataires = [...(abonnements.get(evenement)?.entries() ?? [])];
 
+  const verdict = valider(evenement, charge);
+
+  if (!verdict.valide) {
+    tracer({
+      type: "refus",
+      evenement,
+      source,
+      abonnes: [],
+      charge,
+      ecarts: verdict.ecarts,
+      versionContrats: VERSION_CONTRATS,
+    });
+    return 0;
+  }
+
   tracer({
     type: "publication",
     evenement,
     source,
     abonnes: destinataires.map(([identifiantAbonne]) => identifiantAbonne),
     charge,
+    contractualise: verdict.contractualise,
   });
 
   for (const [, gestionnaire] of destinataires) gestionnaire(structuredClone(charge));

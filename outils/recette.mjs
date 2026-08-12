@@ -159,6 +159,107 @@ etape("le spécificateur nu survit à la compilation", () => {
   return { ok: true };
 });
 
+etape("publication des versions immuables", () => commande("node", ["publier.mjs"], MAQUETTE));
+
+etape("manifeste cohérent avec les artefacts publiés", () => {
+  const resultat = commande("node", [
+    "-e",
+    "const{readFileSync}=require('node:fs');const{createHash}=require('node:crypto');" +
+      "const m=JSON.parse(readFileSync('shell/manifeste.json','utf8'));" +
+      "const c=[['socle',m.socle],...Object.entries(m.fragments)];" +
+      "for(const[n,e]of c){" +
+      "const p=e.url.replace(/^http:\\/\\/localhost:5101\\//,'equipe-tableau/publie/')" +
+      ".replace(/^http:\\/\\/localhost:5102\\//,'equipe-filtres/publie/')" +
+      ".replace(/^http:\\/\\/localhost:5103\\//,'socle/');" +
+      "const h='sha384-'+createHash('sha384').update(readFileSync(p)).digest('base64');" +
+      "if(h!==e.integrity)throw new Error(n+' : empreinte du manifeste != artefact '+p);}" +
+      "console.log(c.length+' entrées vérifiées')",
+  ], MAQUETTE);
+  if (!resultat.ok) return resultat;
+  console.log(`         │ ${resultat.sortie.trim()}`);
+  return { ok: true };
+});
+
+etape("carte d'import alignée sur le manifeste", () => {
+  const resultat = commande("node", [
+    "-e",
+    "const{readFileSync}=require('node:fs');" +
+      "const m=JSON.parse(readFileSync('shell/manifeste.json','utf8'));" +
+      "for(const f of ['index.html','coexistence.html']){" +
+      "const h=readFileSync('shell/'+f,'utf8');" +
+      "const b=h.slice(h.indexOf('CARTE-DEBUT'),h.indexOf('CARTE-FIN'));" +
+      "const c=JSON.parse(b.slice(b.indexOf('{'),b.lastIndexOf('}')+1));" +
+      "for(const e of Object.values(m.fragments))" +
+      "if(c.integrity?.[e.url]!==e.integrity)throw new Error(f+' : '+e.url+' absent ou desaligne');}" +
+      "console.log('deux cartes alignees')",
+  ], MAQUETTE);
+  if (!resultat.ok) return resultat;
+  console.log(`         │ ${resultat.sortie.trim()}`);
+  return { ok: true };
+});
+
+etape("le validateur de contrat : forme, valeurs, bornes, règles", () => {
+  const resultat = commande("node", [
+    "-e",
+    "const{valider}=await import('./socle/v3/contrats.js');" +
+      "const doitPasser=(e,c,q)=>{const v=valider(e,c);if(!v.valide)throw new Error(q+' refusé : '+v.ecarts.join(', '));};" +
+      "const doitEchouer=(e,c,q)=>{const v=valider(e,c);if(v.valide)throw new Error(q+' accepté à tort');return v;};" +
+      "doitPasser('filtre:change',{statut:'a-faire'},'v1');" +
+      "doitPasser('filtre:change',{statut:'a-faire',origine:'utilisateur'},'v2');" +
+      "doitEchouer('filtre:change',{etat:'a-faire'},'champ renommé');" +
+      "doitEchouer('filtre:change',{statut:'en_cours'},'valeur hors ensemble');" +
+      "doitEchouer('filtre:change',{statut:'a-faire',profondeurJours:400},'borne');" +
+      "doitEchouer('filtre:change',{statut:'a-faire',profondeurJours:1.5},'décimal');" +
+      "doitEchouer('filtre:change',{statut:'tous',profondeurJours:10},'règle inter-champs');" +
+      "doitPasser('tache:estimee',{id:'T',charge:{valeur:2,unite:'jours'}},'unité');" +
+      "doitEchouer('tache:estimee',{id:'T',charge:{valeur:128,unite:'jours'}},'jours suspects');" +
+      "const i=valider('evenement:sans-contrat',{n:1});" +
+      "if(!i.valide||i.contractualise)throw new Error('un événement sans contrat doit passer');" +
+      "console.log('9 cas de validation conformes')",
+    "--input-type=module",
+  ], MAQUETTE);
+  if (!resultat.ok) return resultat;
+  console.log(`         │ ${resultat.sortie.trim()}`);
+  return { ok: true };
+});
+
+etape("le verdict de publier() distingue les trois issues", () => {
+  const resultat = commande("node", [
+    "-e",
+    "globalThis.dispatchEvent=()=>{};globalThis.CustomEvent=class{constructor(){}};" +
+      "const bus=await import('./socle/v3/bus.js');" +
+      "bus.abonner('filtre:change','sonde',()=>{});" +
+      "const remis=bus.publier('filtre:change',{statut:'tous'},'t');" +
+      "if(!remis.remis||remis.refuse)throw new Error('cas remis incorrect');" +
+      "const sans=bus.publier('autre:evenement',{},'t');" +
+      "if(sans.remis||sans.refuse)throw new Error('cas sans abonné incorrect');" +
+      "const ref=bus.publier('filtre:change',{etat:'tous'},'t');" +
+      "if(ref.refuse!=='contrat'||ref.remis)throw new Error('cas refusé incorrect');" +
+      "console.log('remis / sans abonné / refusé : distingués')",
+    "--input-type=module",
+  ], MAQUETTE);
+  if (!resultat.ok) return resultat;
+  console.log(`         │ ${resultat.sortie.trim()}`);
+  return { ok: true };
+});
+
+etape("la combinaison servie a été assemblée", () => {
+  const resultat = commande("node", [
+    "-e",
+    "const m=await import('./combinaisons.mjs');" +
+      "const man=await m.manifesteCourant();const c=m.combinaisonDe(man);" +
+      "const p=await m.verifierArtefacts(man);" +
+      "if(p.length)throw new Error(p.join(' ; '));" +
+      "const a=await m.estApprouvee(c.cle);" +
+      "if(!a)throw new Error('combinaison jamais assemblée : '+c.cle);" +
+      "console.log(c.cle)",
+    "--input-type=module",
+  ], MAQUETTE);
+  if (!resultat.ok) return resultat;
+  console.log(`         │ ${resultat.sortie.trim()}`);
+  return { ok: true };
+});
+
 etape("aucun artefact n'embarque de copie du socle", () => {
   for (const fichier of [
     "maquette-independance/equipe-tableau/dist/mf-tableau.js",

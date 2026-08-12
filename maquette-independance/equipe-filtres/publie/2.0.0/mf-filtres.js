@@ -1,17 +1,6 @@
-import { publier, VERSION, identifiant } from "@socle/bus";
-
-/**
- * Fragment publié par l'équipe « filtres ».
- *
- * Il affiche le nombre d'abonnés retourné par `publier`. C'est le seul retour que le
- * bus fournit — pas un accusé de réception, pas un code d'état : un entier. Quand il
- * vaut zéro, le message est perdu et rien d'autre ne le dit.
- */
-
-const LIBELLE = "filtres v3 — migré sur socle 3.0";
-
-const STATUTS = ["tous", "a-faire", "en-cours", "termine"] as const;
-
+import { publier, identifiant, VERSION } from "@socle/bus";
+const LIBELLE = "filtres v2 — a renommé statut en etat";
+const STATUTS = ["tous", "a-faire", "en-cours", "termine"];
 const STYLE = `
   :host { display: block; font-family: ui-sans-serif, system-ui, sans-serif; }
   .cadre { border: 1px solid #a29d92; background: #fff; }
@@ -27,36 +16,26 @@ const STYLE = `
   .retour { padding: 0 9px 9px; font-family: ui-monospace, Menlo, monospace; font-size: 15px; }
   .perdu { color: #a81f16; font-weight: 700; }
 `;
-
 class MfFiltres extends HTMLElement {
-  #racine: ShadowRoot;
+  #racine;
   #statut = "tous";
-  /** Le verdict rendu par le socle 3.0, au lieu de l'entier ambigu des versions 1 et 2. */
-  #dernierVerdict:
-    | { remis: boolean; abonnes: string[]; refuse: false | "contrat"; ecarts: string[] }
-    | undefined = undefined;
-
+  #dernierRetour = void 0;
   constructor() {
     super();
     this.#racine = this.attachShadow({ mode: "open" });
   }
-
-  connectedCallback(): void {
+  connectedCallback() {
     this.#rendre();
   }
-
-  #publier(): void {
-    this.#dernierVerdict = publier("filtre:change", { statut: this.#statut }, "mf-filtres");
+  #publier() {
+    this.#dernierRetour = publier("filtre:change", { etat: this.#statut }, "mf-filtres");
     this.#rendre();
   }
-
-  #rendre(): void {
+  #rendre() {
     const style = document.createElement("style");
     style.textContent = STYLE;
-
     const cadre = document.createElement("div");
     cadre.className = "cadre";
-
     const tete = document.createElement("div");
     tete.className = "tete";
     const nom = document.createElement("span");
@@ -65,7 +44,6 @@ class MfFiltres extends HTMLElement {
     lien.className = "lien";
     lien.textContent = `lié à ${identifiant}`;
     tete.append(nom, lien);
-
     const corps = document.createElement("div");
     corps.className = "corps";
     for (const statut of STATUTS) {
@@ -79,29 +57,16 @@ class MfFiltres extends HTMLElement {
       });
       corps.append(bouton);
     }
-
     const retour = document.createElement("p");
     retour.className = "retour";
-    const verdict = this.#dernierVerdict;
-
-    if (verdict === undefined) {
+    if (this.#dernierRetour === void 0) {
       retour.textContent = `publier() n'a pas encore été appelé · socle ${VERSION}`;
-    } else if (verdict.refuse === "contrat") {
-      // Le producteur SAIT que sa charge a été refusée, et pourquoi. C'est la seule
-      // chose que la 3.0 apporte, et c'est ce que l'entier ne pouvait pas dire.
-      retour.textContent = `REFUSÉ par le contrat — ${verdict.ecarts.join(" · ")}`;
-      retour.classList.add("perdu");
-    } else if (!verdict.remis) {
-      retour.textContent = `charge conforme, mais aucun abonné ne l'écoutait · socle ${VERSION}`;
-      retour.classList.add("perdu");
     } else {
-      retour.textContent =
-        `remis à ${verdict.abonnes.length} abonné(s) : ${verdict.abonnes.join(", ")} · socle ${VERSION}`;
+      retour.textContent = `publier() a retourné ${this.#dernierRetour} abonné(s) · socle ${VERSION}`;
+      if (this.#dernierRetour === 0) retour.classList.add("perdu");
     }
-
     cadre.append(tete, corps, retour);
     this.#racine.replaceChildren(style, cadre);
   }
 }
-
 customElements.define("mf-filtres", MfFiltres);

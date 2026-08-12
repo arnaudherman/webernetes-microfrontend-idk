@@ -16,6 +16,12 @@ import { fileURLToPath } from "node:url";
 
 const RACINE = dirname(fileURLToPath(import.meta.url));
 
+/**
+ * On relève les empreintes des artefacts EN SORTIE DE COMPILATION (`dist`), parce que
+ * c'est là que la preuve centrale se joue : recompiler un seul dépôt ne doit changer
+ * qu'une seule empreinte. Les artefacts publiés, eux, sont immuables par construction —
+ * leur empreinte figure dans le manifeste et dans la carte d'import.
+ */
 const ARTEFACTS = [
   { equipe: "équipe tableau", chemin: "equipe-tableau/dist/mf-tableau.js" },
   { equipe: "équipe filtres", chemin: "equipe-filtres/dist/mf-filtres.js" },

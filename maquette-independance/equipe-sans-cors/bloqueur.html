@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><title>bloqueur</title></head>
+<body>
+<!-- Page servie depuis une AUTRE ORIGINE (port 5105). Elle bloque son fil pendant
+     la durée passée en fragment d'URL. Sert à mesurer si une iframe d'origine
+     différente mais de MÊME SITE partage le fil du parent. -->
+<script>
+  const ms = Number(location.hash.slice(1)) || 0;
+  if (ms > 0) { const fin = Date.now() + ms; while (Date.now() < fin) {} }
+  document.title = "bloqué " + ms + " ms";
+</script>
+</body></html>

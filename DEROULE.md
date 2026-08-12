@@ -182,6 +182,60 @@ Recharger la page : le nouveau libellé apparaît, l'autre fragment n'a pas boug
 > indépendamment. Il n'y a ici ni chaîne de livraison, ni version immuable publiée, ni
 > retour arrière. Je démontre la résolution à l'exécution, pas la gouvernance. »
 
+### 9:30 · Déployer et revenir en arrière
+
+> « L'équipe tableau publie sa version 1.1.0. Elle seule, sans prévenir personne. »
+
+```
+node publier.mjs
+```
+
+> « Rien n'a changé à l'écran. **Publier n'est pas déployer** — sinon une version fautive
+> partirait en production à la seconde où elle est construite, et le retour arrière
+> n'existerait pas. »
+
+```
+node basculer.mjs mf-tableau 1.1.0
+```
+
+**Ça refuse.** C'est voulu, et c'est le moment le plus intéressant de la seconde partie.
+
+> « Refusé, parce que cette combinaison n'a jamais été assemblée. En artefact unique il
+> n'existe qu'une combinaison, et c'est celle qu'on livre. Ici il en existe N × M, et
+> celle qui tournera chez l'utilisateur peut n'avoir jamais existé nulle part. Rien dans
+> le navigateur ne le vérifie — cette porte, je l'ai écrite, cent vingt lignes. »
+
+```
+node basculer.mjs mf-tableau 1.1.0 --non-approuvee    puis recharger et vérifier
+node approuver.mjs --preuve "assemblée dans Chrome : 1 abonné atteint"
+node basculer.mjs mf-tableau 1.0.0                    retour arrière, autorisé
+```
+
+> « Soixante-deux millisecondes, zéro compilation, zéro redémarrage. Les deux versions
+> restent en ligne côte à côte. C'est ça, le déploiement indépendant. »
+
+Et la concession qui rend le reste crédible :
+
+> « Cette porte ne teste rien. Elle vérifie que les artefacts existent et correspondent à
+> leur empreinte, puis elle enregistre une déclaration humaine — comme les portes de
+> déploiement côté serveur. Une combinaison approuvée à la légère est une combinaison
+> approuvée. »
+
+Puis les deux refus, dans cet ordre :
+
+> « Republier une version existante avec un contenu différent : refusé. Une version
+> publiée ne se réécrit pas — c'est précisément ce qui rend le retour arrière possible. »
+
+> « Et si quelqu'un altère un artefact déjà publié, en place ? Le navigateur le rejette,
+> parce que l'empreinte de la carte d'import ne correspond plus. Le fragment ne monte
+> pas, les autres continuent. L'immuabilité n'est plus une promesse d'organisation, c'est
+> une contrainte vérifiée par la plateforme. »
+
+À concéder tout de suite, avant qu'on vous le demande :
+
+> « L'erreur affichée est un `TypeError` identique à celui d'une panne CORS. Le navigateur
+> protège, mais il ne dit pas de quoi. »
+
 ### 10:00 · Faire coexister deux versions, et ce que ça casse
 
 Ouvrir <http://localhost:5100/coexistence.html>.
@@ -207,6 +261,46 @@ Cliquer un filtre. Montrer, dans l'ordre :
 
 > « Vous venez de revoir l'essai 5, une couche plus bas. »
 
+### 10:40 · Le même contrat rompu, mais arrêté
+
+**C'est le rappel de l'essai 5, et le point d'arrivée de toute la démonstration.**
+
+```
+node basculer.mjs mf-filtres 2.0.0 --non-approuvee     puis recharger
+```
+
+> « L'équipe filtres livre sa 2.0.0. Elle a renommé `statut` en `etat` — le nom de
+> l'événement n'a pas bougé, son contrat déclaré non plus. C'est exactement l'essai 5. »
+
+Cliquer un filtre. Montrer la ligne du journal :
+
+```
+[REFUSÉ] filtre:change ← mf-filtres  {"etat":"en-cours"}
+         champ requis absent : statut · champ inattendu : etat
+```
+
+> « Tout à l'heure, le tableau affichait neuf sur neuf et se croyait juste. Ici le
+> message est arrêté avant d'être remis, et l'écart est nommé. »
+
+Puis la question qui décide de tout, à poser vous-même avant qu'on vous la pose :
+
+> « Qui possède ce schéma ? Si c'était le producteur, la vérification ne vaudrait rien :
+> l'équipe qui renomme le champ renommerait aussi son schéma, et le contrôle passerait.
+> Il vit donc dans le socle partagé — ce qui veut dire que **faire évoluer un contrat
+> devient une livraison du socle**, donc un point de synchronisation entre toutes les
+> équipes. La vérification ne supprime pas la coordination : elle la déplace, du moment
+> où la panne se produit vers le moment où le contrat change. C'est un bien meilleur
+> moment, mais ce n'est pas gratuit. »
+
+Retour à la version saine :
+
+```
+node basculer.mjs mf-filtres 1.0.0
+```
+
+> « Et notez : la 1.0.0 publiée avant le renommage est intacte. C'est à ça que sert
+> l'immuabilité. »
+
 ### 11:00 · Les deux pannes de frontière
 
 Cliquer les deux boutons.
@@ -222,6 +316,13 @@ Cliquer les deux boutons.
 > rattrapable** — contrairement à un message perdu sur un bus. Mais elle ne l'est que
 > parce que j'ai écrit un `try/catch` : c'est le seul endroit du dispositif où cette
 > panne devient observable. »
+
+Montrer les deux lignes qui suivent dans le journal :
+
+> « Et regardez : le navigateur rend exactement le même `TypeError` pour un refus CORS,
+> un 404 et un artefact corrompu. La ligne en dessous dit laquelle des trois — mais ce
+> n'est pas le navigateur qui le dit, c'est soixante lignes que j'ai écrites. C'est ça,
+> concrètement, "l'observabilité de la frontière front est un prérequis". »
 
 ---
 

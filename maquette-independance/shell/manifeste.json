@@ -1,4 +1,19 @@
 {
-  "mf-filtres": "http://localhost:5102/mf-filtres.js",
-  "mf-tableau": "http://localhost:5101/mf-tableau.js"
+  "socle": {
+    "version": "3.0",
+    "url": "http://localhost:5103/v3/bus.js",
+    "integrity": "sha384-5EuKdpeu9EtixIDlMbeUzz8jjxB1+YDZc4A+d4x0GhZEpEm/0rdNqt1pjATAVuFo"
+  },
+  "fragments": {
+    "mf-tableau": {
+      "version": "1.0.0",
+      "url": "http://localhost:5101/1.0.0/mf-tableau.js",
+      "integrity": "sha384-qXEY9e+F8Q/Z9XARVSJozypE/UDUu8bNFvHfuWKbum2URtXylrDuTwNoFthy0WDs"
+    },
+    "mf-filtres": {
+      "version": "3.0.0",
+      "url": "http://localhost:5102/3.0.0/mf-filtres.js",
+      "integrity": "sha384-Y+GUCZnEwKAPVGlOcTmonl/DhNcvZrgx+DUDE5U+gNMRUKkxtHlFM2HF/eVi+f+b"
+    }
+  }
 }
