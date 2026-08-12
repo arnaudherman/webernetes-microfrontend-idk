@@ -1,0 +1,4 @@
+{
+  "mf-filtres": "http://localhost:5102/mf-filtres.js",
+  "mf-tableau": "http://localhost:5101/mf-tableau.js"
+}

@@ -1,0 +1,192 @@
+/*
+ * Socle graphique.
+ *
+ * Contraintes de presentation : projection en salle a 1280x800, corps de texte a
+ * 15 pixels minimum, contrastes eleves, deux couleurs d'accent au maximum, aucune
+ * police telechargee, aucune animation decorative.
+ *
+ * Trois familles typographiques, chacune avec un role strict :
+ *   --libelles : le mobilier de l'interface (titres, boutons, etiquettes)
+ *   --texte    : la prose destinee a etre lue (observations, conclusions)
+ *   --donnee   : tout ce qui est donnee, contrat, journal ou charge utile
+ */
+
+:root {
+  color-scheme: light;
+
+  /* Neutres */
+  --fond: #f2f1ed;
+  --fond-creux: #e6e4dd;
+  --surface: #ffffff;
+  --trait: #cdc9c0;
+  --trait-fort: #a29d92;
+  --encre: #14161a;
+  --encre-douce: #40454d;
+  --encre-tenue: #5a5f68;
+
+  /* Deux accents, et deux seulement. */
+  --nominal: #1145b4;
+  --nominal-voile: #dde5f8;
+  --panne: #a81f16;
+  --panne-voile: #f8e0de;
+
+  /* Typographie */
+  --libelles: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --texte: Georgia, "Iowan Old Style", "Times New Roman", Times, serif;
+  --donnee: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono",
+    "Courier New", monospace;
+
+  --taille-corps: 16px;
+  --taille-donnee: 15px;
+  --taille-libelle: 14px;
+
+  /* Rythme */
+  --pas: 8px;
+  /* La barre d'essais est fixe : le reste de la page doit rester lisible au-dessus.
+     Ces trois hauteurs sont liées — journal + frontière + journal doivent tenir dans
+     un écran de 800 px moins la barre, pour que la comparaison des deux journaux se
+     fasse d'un seul coup d'œil. */
+  --hauteur-barre: 168px;
+  --hauteur-journal: 200px;
+
+  --duree-courte: 140ms;
+  --duree-traversee: 240ms;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: var(--fond);
+  color: var(--encre);
+  font-family: var(--libelles);
+  font-size: var(--taille-corps);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  padding-bottom: var(--hauteur-barre);
+}
+
+/* ---------------------------------------------------------------- primitives */
+
+.titre-zone {
+  font-family: var(--libelles);
+  font-size: var(--taille-libelle);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--encre-tenue);
+  margin: 0;
+}
+
+.prose {
+  font-family: var(--texte);
+  font-size: var(--taille-corps);
+  line-height: 1.55;
+  color: var(--encre);
+}
+
+.donnee {
+  font-family: var(--donnee);
+  font-size: var(--taille-donnee);
+  font-variant-numeric: tabular-nums;
+}
+
+.panneau {
+  background: var(--surface);
+  border: 1px solid var(--trait);
+}
+
+/* Boutons -------------------------------------------------------------------- */
+
+.bouton {
+  font-family: var(--libelles);
+  font-size: var(--taille-libelle);
+  font-weight: 600;
+  color: var(--encre);
+  background: var(--surface);
+  border: 1px solid var(--trait-fort);
+  padding: calc(var(--pas) * 1.25) calc(var(--pas) * 1.5);
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--duree-courte) ease, border-color var(--duree-courte) ease;
+}
+
+.bouton:hover:not(:disabled) {
+  background: var(--fond-creux);
+  border-color: var(--encre-douce);
+}
+
+.bouton:active:not(:disabled) {
+  background: var(--fond-creux);
+}
+
+.bouton:disabled {
+  color: var(--encre-tenue);
+  border-color: var(--trait);
+  background: var(--fond-creux);
+  cursor: not-allowed;
+}
+
+.bouton[data-arme="oui"] {
+  border-color: var(--panne);
+  color: var(--panne);
+  background: var(--panne-voile);
+}
+
+/* Focus clavier -------------------------------------------------------------- */
+
+:focus-visible {
+  outline: 3px solid var(--nominal);
+  outline-offset: 2px;
+}
+
+/* Etats ---------------------------------------------------------------------- */
+
+.jeton {
+  font-family: var(--donnee);
+  font-size: var(--taille-donnee);
+  border: 1px solid currentColor;
+  padding: 0 6px;
+  white-space: nowrap;
+}
+
+.est-nominal {
+  color: var(--nominal);
+}
+
+.est-panne {
+  color: var(--panne);
+}
+
+/* Accessibilite -------------------------------------------------------------- */
+
+.hors-ecran {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+    scroll-behavior: auto !important;
+  }
+}

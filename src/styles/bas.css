@@ -1,0 +1,199 @@
+/*
+ * Moitié basse : le cluster.
+ *
+ * Traitement graphique volontairement différent de la moitié haute — cartes
+ * encadrées, colonnes par nœud, adresses IP partout. On ne doit jamais confondre
+ * cette vue avec le rail du bus.
+ */
+
+.journal-cluster .ligne {
+  grid-template-columns: 106px 46px minmax(140px, 1.1fr) 46px 84px minmax(200px, 2fr);
+}
+
+.journal-cluster .ligne-evenement .verbe {
+  color: var(--encre-tenue);
+  font-weight: 500;
+}
+
+.topologie {
+  flex: 1 1 auto;
+  padding: 14px 24px 24px;
+}
+
+.topologie-tete {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.compteurs {
+  margin: 0;
+  color: var(--encre-douce);
+  font-weight: 600;
+}
+
+.noeuds {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.noeud {
+  border: 1px solid var(--trait-fort);
+  background: var(--surface);
+  min-height: 208px;
+  display: flex;
+  flex-direction: column;
+}
+
+.noeud-tete {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--trait);
+  background: var(--fond-creux);
+  font-size: var(--taille-libelle);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.noeud-ip {
+  font-weight: 500;
+  color: var(--encre-tenue);
+}
+
+.noeud-pods {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+}
+
+.noeud-vide {
+  margin: 0;
+  color: var(--encre-tenue);
+  font-size: var(--taille-libelle);
+  font-style: italic;
+}
+
+/* Carte de pod ---------------------------------------------------------------- */
+
+.pod {
+  border: 1px solid var(--trait);
+  border-left: 4px solid var(--trait-fort);
+  padding: 7px 10px;
+  background: var(--surface);
+}
+
+.pod-nom {
+  font-size: var(--taille-donnee);
+  color: var(--encre);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pod-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-top: 3px;
+}
+
+.pod-phase {
+  font-family: var(--libelles);
+  font-size: var(--taille-libelle);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+.pod-ip {
+  color: var(--encre-tenue);
+}
+
+.pod-etat {
+  margin-top: 2px;
+  font-size: var(--taille-libelle);
+  color: var(--encre-tenue);
+}
+
+.pod[data-presentation="actif"] {
+  border-left-color: var(--nominal);
+}
+
+.pod[data-presentation="actif"] .pod-phase {
+  color: var(--nominal);
+}
+
+.pod[data-presentation="attente"] {
+  border-left-color: var(--trait-fort);
+}
+
+.pod[data-presentation="attente"] .pod-phase {
+  color: var(--encre-douce);
+}
+
+/* Une suppression volontaire n'est pas une panne : le pod passe par phase Failed
+   pendant environ une seconde avant de disparaître. On ne le peint pas en rouge. */
+.pod[data-presentation="terminaison"] {
+  border-left-color: var(--encre-tenue);
+  border-style: dashed;
+  opacity: 0.72;
+}
+
+.pod[data-presentation="terminaison"] .pod-phase {
+  color: var(--encre-tenue);
+}
+
+.pod[data-presentation="echec"] {
+  border-left-color: var(--panne);
+}
+
+.pod[data-presentation="echec"] .pod-phase {
+  color: var(--panne);
+}
+
+/* Trafic : la seule animation autorisée ici, elle porte une information. */
+.pod-trafic {
+  animation: impulsion-nominale 700ms ease-out;
+}
+
+.pod-trafic-panne {
+  animation: impulsion-panne 700ms ease-out;
+}
+
+@keyframes impulsion-nominale {
+  0% {
+    background: var(--nominal-voile);
+  }
+  100% {
+    background: var(--surface);
+  }
+}
+
+@keyframes impulsion-panne {
+  0% {
+    background: var(--panne-voile);
+  }
+  100% {
+    background: var(--surface);
+  }
+}
+
+/* Services -------------------------------------------------------------------- */
+
+.services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 12px;
+  color: var(--encre-douce);
+}
+
+.service {
+  white-space: nowrap;
+}

@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Maquette — coexistence de deux versions du socle</title>
+
+    <!--
+      La même carte d'import, augmentée d'une clé `scopes`.
+
+      `scopes` est le SEUL moyen standard de faire coexister deux versions d'une
+      dépendance partagée. Il est déclaratif et sans négociation : on désigne une URL
+      par spécificateur et par portée, et le scope le plus spécifique l'emporte.
+
+      Ici, tout ce qui est chargé depuis l'origine de l'équipe filtres (port 5102)
+      résout `@socle/bus` vers la version 2.0. Tout le reste garde la 1.0.
+
+      La contrepartie n'est pas négociable et n'est signalée par rien : deux URL, c'est
+      deux instances de module, donc deux états. Les deux fragments croient parler au
+      même bus. `publier()` retournera 0.
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@socle/bus": "http://localhost:5103/v1/bus.js"
+        },
+        "scopes": {
+          "http://localhost:5102/": {
+            "@socle/bus": "http://localhost:5103/v2/bus.js"
+          }
+        }
+      }
+    </script>
+
+    <link rel="stylesheet" href="./maquette.css" />
+  </head>
+
+  <body>
+    <h1>Maquette — coexistence de deux versions du socle</h1>
+    <p class="sous-titre">
+      L'équipe filtres a migré vers le socle 2.0, l'équipe tableau est restée en 1.0. La
+      carte d'import permet aux deux de cohabiter, sans recompilation et sans
+      négociation. Cliquez un filtre, puis regardez le nombre d'abonnés retourné et
+      l'identifiant de socle affiché par chaque fragment.
+    </p>
+
+    <nav><a href="./index.html">→ revenir au cas nominal, une seule version</a></nav>
+
+    <h2>carte d'import active — noter la clé scopes</h2>
+    <pre class="carte-import" id="carte-import"></pre>
+
+    <h2>fragments montés</h2>
+    <div class="fragments" id="fragments"></div>
+
+    <h2>essais</h2>
+    <div class="essais">
+      <button type="button" id="recenser">recenser les instances du socle</button>
+      <button type="button" id="concurrent">charger le dépôt concurrent (port 5104)</button>
+      <button type="button" id="sans-cors">charger depuis une origine sans CORS (port 5105)</button>
+      <button type="button" id="recharger">recharger la page</button>
+    </div>
+
+    <h2>journaux</h2>
+    <div class="journaux">
+      <div class="journal"><ol id="journal-chargement"></ol></div>
+      <div class="journal"><ol id="journal-bus"></ol></div>
+    </div>
+
+    <p class="avertissement">
+      <strong>Coexistence de versions et état partagé sont antagonistes.</strong> Ce
+      n'est pas un défaut de la carte d'import ni du socle : c'est la sémantique des
+      modules ES. Deux URL distinctes produisent deux instances distinctes, même quand
+      le code est identique au caractère près — et c'est le cas ici, les deux versions
+      du socle ne diffèrent que par leur numéro. Aucune exception n'est levée, aucun
+      avertissement n'est émis. Le message est simplement perdu.
+    </p>
+
+    <script type="module" src="./shell.js"></script>
+  </body>
+</html>

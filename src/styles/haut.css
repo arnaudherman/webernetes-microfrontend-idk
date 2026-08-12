@@ -1,0 +1,317 @@
+/*
+ * Moitié haute : l'interface.
+ *
+ * Traitement graphique volontairement différent de la moitié basse. Ici, pas de
+ * cartes encadrées par nœud ni d'adresses IP : des modules alignés sur un rail, et
+ * un journal qui ne comporte aucune colonne de code d'état — parce qu'il n'y en a pas.
+ */
+
+/* Bandeau de source ---------------------------------------------------------- */
+
+.bandeau-source {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 10px 24px 6px;
+}
+
+.bandeau-droite {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.bouton-synthese {
+  flex: 0 0 auto;
+  font-family: var(--libelles);
+  font-size: var(--taille-libelle);
+  font-weight: 600;
+  padding: 3px 12px;
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--trait-fort);
+  color: var(--encre);
+}
+
+.bouton-synthese:hover {
+  background: var(--fond-creux);
+  border-color: var(--encre-douce);
+}
+
+.source-etat {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--donnee);
+  font-size: var(--taille-donnee);
+  color: var(--encre-tenue);
+}
+
+.source-etat[data-phase="erreur"] {
+  color: var(--panne);
+}
+
+.source-etat[data-phase="charge"] {
+  color: var(--encre-douce);
+}
+
+.bouton-reessai {
+  font-family: var(--libelles);
+  font-size: var(--taille-libelle);
+  font-weight: 600;
+  padding: 3px 10px;
+  cursor: pointer;
+  background: var(--surface);
+  border: 1px solid var(--panne);
+  color: var(--panne);
+}
+
+.bouton-reessai:hover {
+  background: var(--panne-voile);
+}
+
+/* Le rail du bus -------------------------------------------------------------- */
+
+.rail {
+  position: relative;
+  height: 76px;
+  margin: 0 24px 6px;
+}
+
+.rail-piste {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 28px;
+  height: 2px;
+  background: var(--trait-fort);
+}
+
+.rail-station {
+  position: absolute;
+  top: 14px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.rail-pastille {
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  border: 2px solid var(--trait-fort);
+  background: var(--surface);
+}
+
+.rail-station[data-role="source"] .rail-pastille {
+  border-color: var(--nominal);
+  background: var(--nominal);
+}
+
+.rail-station[data-role="abonne"] .rail-pastille {
+  border-color: var(--nominal);
+}
+
+.rail-nom {
+  font-family: var(--donnee);
+  font-size: var(--taille-libelle);
+  color: var(--encre-tenue);
+  white-space: nowrap;
+}
+
+.rail-station[data-role="source"] .rail-nom,
+.rail-station[data-role="abonne"] .rail-nom {
+  color: var(--nominal);
+}
+
+.rail-station[data-monte="non"] .rail-pastille {
+  border-style: dashed;
+  background: var(--fond-creux);
+}
+
+.rail-impulsion {
+  position: absolute;
+  top: 23px;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--nominal);
+  pointer-events: none;
+  will-change: transform;
+}
+
+.rail-impulsion[data-perdue="oui"] {
+  background: var(--encre-tenue);
+}
+
+.rail-entree {
+  position: absolute;
+  left: 0;
+  top: 52px;
+  font-family: var(--donnee);
+  font-size: var(--taille-libelle);
+  color: var(--encre-tenue);
+}
+
+.rail-legende {
+  position: absolute;
+  right: 0;
+  top: 52px;
+  font-family: var(--donnee);
+  font-size: var(--taille-libelle);
+  color: var(--encre-tenue);
+}
+
+/* Les modules ------------------------------------------------------------------ */
+
+.modules {
+  display: grid;
+  grid-template-columns:
+    minmax(178px, 0.66fr) minmax(280px, 1.72fr)
+    minmax(196px, 1fr) minmax(210px, 1.06fr);
+  gap: 12px;
+  padding: 0 24px 12px;
+  height: 320px;
+}
+
+.module {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: var(--surface);
+  border: 1px solid var(--trait-fort);
+}
+
+.module-tete {
+  flex: 0 0 auto;
+  padding: 5px 10px 6px;
+  border-bottom: 1px solid var(--trait);
+  background: var(--fond-creux);
+}
+
+.module-identite {
+  margin: 0;
+  font-size: var(--taille-donnee);
+  font-weight: 700;
+  color: var(--encre);
+}
+
+/* Flux inline plutôt que grille : dans le module le plus étroit, un jeton comme
+   `donnees:chargees` doit pouvoir passer à la ligne au lieu d'être tronqué. Un
+   contrat coupé au milieu ne se lit pas en projection. */
+.module-contrat {
+  margin: 3px 0 0;
+  display: block;
+  line-height: 1.6;
+}
+
+.module-contrat dt {
+  display: inline;
+  margin-right: 5px;
+  font-family: var(--libelles);
+  font-size: var(--taille-libelle);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--encre-tenue);
+}
+
+.module-contrat dd {
+  display: inline;
+  margin: 0;
+}
+
+.module-contrat dd::after {
+  content: "";
+  display: block;
+}
+
+.evenement {
+  display: inline-block;
+  font-family: var(--donnee);
+  font-size: var(--taille-libelle);
+  border: 1px solid currentColor;
+  padding: 0 4px;
+  margin-right: 3px;
+  white-space: nowrap;
+}
+
+.evenement-sortant {
+  color: var(--nominal);
+}
+
+.evenement-entrant {
+  color: var(--encre-douce);
+}
+
+.evenement-neant {
+  font-family: var(--texte);
+  font-size: var(--taille-libelle);
+  font-style: italic;
+  color: var(--encre-tenue);
+}
+
+.module-hote {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.module[data-etat="demonte"] {
+  border-style: dashed;
+  background: var(--fond-creux);
+}
+
+.module[data-etat="demonte"] .module-tete {
+  opacity: 0.6;
+}
+
+.module-demonte {
+  margin: 0;
+  padding: 14px 12px;
+  font-family: var(--texte);
+  font-size: var(--taille-corps);
+  line-height: 1.45;
+  color: var(--encre-tenue);
+}
+
+/* Journal du bus --------------------------------------------------------------
+   Il n'y a pas de colonne de code d'état, et ce n'est pas un oubli. */
+
+.journal-bus .ligne {
+  grid-template-columns: 106px 152px 122px 236px minmax(180px, 1fr);
+}
+
+.journal-bus .evenement-nom {
+  color: var(--encre);
+  font-weight: 600;
+}
+
+.journal-bus .source {
+  color: var(--encre-douce);
+}
+
+.journal-bus .abonnes {
+  color: var(--encre-douce);
+}
+
+.journal-bus .charge-utile {
+  color: var(--encre-tenue);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* « 0 abonné » est encadré pour rester lisible en projection, mais reste en encre
+   neutre : le bus ne signale rien, il constate. Le peindre en rouge serait lui
+   prêter une alerte qu'il n'émet pas. */
+.journal-bus .abonnes[data-perdu="oui"] {
+  color: var(--encre);
+  font-weight: 700;
+  border: 1px solid var(--encre-douce);
+  padding: 0 5px;
+  justify-self: start;
+}

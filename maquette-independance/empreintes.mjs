@@ -1,0 +1,51 @@
+#!/usr/bin/env node
+/**
+ * Empreintes SHA-256 des artefacts publiés.
+ *
+ * C'est l'instrument de la preuve centrale : on relève les empreintes, on recompile
+ * UN SEUL dépôt, on relève à nouveau. Une empreinte change, les autres sont
+ * identiques au bit près, et aucun serveur n'a été redémarré.
+ *
+ *   node empreintes.mjs
+ */
+
+import { createHash } from "node:crypto";
+import { readFile, stat } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const RACINE = dirname(fileURLToPath(import.meta.url));
+
+const ARTEFACTS = [
+  { equipe: "équipe tableau", chemin: "equipe-tableau/dist/mf-tableau.js" },
+  { equipe: "équipe filtres", chemin: "equipe-filtres/dist/mf-filtres.js" },
+  { equipe: "équipe socle (v1)", chemin: "socle/v1/bus.js" },
+  { equipe: "équipe socle (v2)", chemin: "socle/v2/bus.js" },
+  { equipe: "dépôt concurrent", chemin: "depot-concurrent/dist/mf-tableau.js" },
+];
+
+const horodatage = new Date().toISOString().replace("T", " ").slice(0, 19);
+console.log(`\nEmpreintes SHA-256 des artefacts publiés — ${horodatage}\n`);
+
+let manquants = 0;
+
+for (const artefact of ARTEFACTS) {
+  const fichier = resolve(RACINE, artefact.chemin);
+  try {
+    const info = await stat(fichier);
+    const contenu = await readFile(fichier);
+    const empreinte = createHash("sha256").update(contenu).digest("hex");
+    console.log(
+      `  ${artefact.equipe.padEnd(20)} ${empreinte.slice(0, 32)}…  ` +
+        `${String(info.size).padStart(6)} o   ${artefact.chemin}`,
+    );
+  } catch {
+    manquants += 1;
+    console.log(`  ${artefact.equipe.padEnd(20)} ${"—".padEnd(32)}    absent   ${artefact.chemin}`);
+  }
+}
+
+if (manquants > 0) {
+  console.log(`\n  ${manquants} artefact(s) absent(s) : lancer d'abord « node construire.mjs ».`);
+}
+console.log("");

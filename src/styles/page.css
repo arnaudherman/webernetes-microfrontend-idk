@@ -1,0 +1,119 @@
+/*
+ * Squelette de la page.
+ *
+ * La page fait deux hauteurs d'écran. La ligne de frontière en est la colonne
+ * vertébrale : au-dessus, l'interface ; en dessous, le cluster.
+ *
+ * Les deux journaux sont placés de part et d'autre immédiate de cette ligne, en
+ * pleine largeur. Au moment où la frontière est au centre de l'écran, ils sont
+ * visibles tous les deux, séparés uniquement par elle : à gauche des codes d'état,
+ * au-dessus aucun. C'est l'argument visuel principal de la démonstration.
+ */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.bande {
+  display: flex;
+  flex-direction: column;
+}
+
+.bande-haute {
+  background: var(--fond);
+}
+
+.bande-basse {
+  background: var(--fond-creux);
+}
+
+/* Journal, structure commune aux deux moitiés ------------------------------- */
+
+.journal {
+  display: flex;
+  flex-direction: column;
+  height: var(--hauteur-journal);
+  border-top: 1px solid var(--trait);
+  border-bottom: 1px solid var(--trait);
+  background: var(--surface);
+}
+
+.journal-tete {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+  padding: 8px 24px 6px;
+  border-bottom: 1px solid var(--trait);
+  flex: 0 0 auto;
+}
+
+.journal-legende {
+  margin: 0;
+  font-size: var(--taille-libelle);
+  color: var(--encre-tenue);
+  font-family: var(--donnee);
+}
+
+.journal-legende strong {
+  color: var(--encre);
+}
+
+.journal-lignes {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin: 0;
+  padding: 4px 0 6px;
+  list-style: none;
+}
+
+.ligne {
+  display: grid;
+  align-items: baseline;
+  gap: 12px;
+  padding: 1px 24px;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+/* Chaque cellule reste dans sa colonne : en projection, deux colonnes qui se
+   chevauchent rendent le journal illisible. */
+.ligne > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ligne .heure {
+  color: var(--encre-tenue);
+}
+
+.ligne .verbe {
+  color: var(--encre-douce);
+  font-weight: 600;
+}
+
+.ligne .cible {
+  color: var(--encre);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ligne .statut {
+  font-weight: 700;
+  text-align: right;
+}
+
+.ligne .duree,
+.ligne .chaine {
+  color: var(--encre-tenue);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.journal-vide {
+  padding: 8px 24px;
+  color: var(--encre-tenue);
+}

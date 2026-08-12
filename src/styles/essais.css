@@ -1,0 +1,121 @@
+/*
+ * La barre d'essais.
+ *
+ * Fixée en bas de fenêtre pour rester atteignable quelle que soit la position de
+ * défilement : l'enchaînement essai 5 puis essai 2 doit se jouer sans rechargement
+ * ni défilement.
+ */
+
+.barre-essais {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--hauteur-barre);
+  display: grid;
+  grid-template-columns: minmax(210px, auto) minmax(300px, auto) minmax(320px, 1fr);
+  gap: 20px;
+  padding: 9px 24px 10px;
+  background: var(--surface);
+  border-top: 3px solid var(--encre);
+  z-index: 10;
+}
+
+.groupe-essais {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.groupe-essais > .titre-zone {
+  font-size: var(--taille-libelle);
+}
+
+.essais-boutons {
+  display: grid;
+  gap: 5px;
+  align-content: start;
+}
+
+.groupe-bas .essais-boutons {
+  grid-template-columns: 1fr;
+}
+
+.groupe-haut .essais-boutons {
+  grid-template-columns: 1fr 1fr;
+}
+
+.bouton.essai {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 9px;
+  min-width: 0;
+}
+
+.essai-numero {
+  flex: 0 0 auto;
+  font-family: var(--donnee);
+  font-weight: 700;
+  color: var(--encre-tenue);
+  border: 1px solid var(--trait);
+  padding: 0 5px;
+}
+
+.essai-libelle {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bouton.essai[data-arme="oui"] .essai-numero {
+  border-color: var(--panne);
+  color: var(--panne);
+}
+
+/* Zone d'observation ---------------------------------------------------------- */
+
+.observation {
+  min-width: 0;
+  overflow-y: auto;
+  border-left: 3px solid var(--trait);
+  padding-left: 16px;
+}
+
+.observation[data-ton="nominal"] {
+  border-left-color: var(--nominal);
+}
+
+.observation[data-ton="panne"] {
+  border-left-color: var(--panne);
+}
+
+.observation-titre {
+  margin: 0;
+  font-family: var(--libelles);
+  font-size: var(--taille-libelle);
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--encre-tenue);
+}
+
+.observation-verdict {
+  margin: 2px 0 3px;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--encre);
+}
+
+.observation[data-ton="panne"] .observation-verdict {
+  color: var(--panne);
+}
+
+.observation-detail {
+  margin: 0;
+  font-size: var(--taille-donnee);
+  line-height: 1.45;
+  color: var(--encre-douce);
+}

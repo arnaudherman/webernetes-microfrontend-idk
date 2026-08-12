@@ -1,0 +1,176 @@
+:root {
+  --fond: #f2f1ed;
+  --surface: #ffffff;
+  --trait: #cdc9c0;
+  --trait-fort: #a29d92;
+  --encre: #14161a;
+  --encre-douce: #40454d;
+  --encre-tenue: #5a5f68;
+  --nominal: #1145b4;
+  --panne: #a81f16;
+  --libelles: ui-sans-serif, system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --texte: Georgia, "Times New Roman", Times, serif;
+  --donnee: ui-monospace, SFMono-Regular, Menlo, Consolas, "Courier New", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 20px 24px 40px;
+  background: var(--fond);
+  color: var(--encre);
+  font-family: var(--libelles);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+h1 {
+  margin: 0 0 2px;
+  font-size: 19px;
+  letter-spacing: 0.02em;
+}
+
+.sous-titre {
+  margin: 0 0 18px;
+  font-family: var(--texte);
+  color: var(--encre-douce);
+  max-width: 78ch;
+}
+
+h2 {
+  margin: 22px 0 8px;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--encre-tenue);
+}
+
+.carte-import {
+  margin: 0;
+  padding: 9px 12px;
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  border-left: 3px solid var(--nominal);
+  font-family: var(--donnee);
+  font-size: 15px;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.fragments {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  gap: 12px;
+}
+
+.essais {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.essais button {
+  font-family: var(--libelles);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 7px 12px;
+  background: var(--surface);
+  border: 1px solid var(--trait-fort);
+  color: var(--encre);
+  cursor: pointer;
+}
+
+.essais button:hover {
+  background: #e6e4dd;
+  border-color: var(--encre-douce);
+}
+
+.essais button:focus-visible {
+  outline: 3px solid var(--nominal);
+  outline-offset: 2px;
+}
+
+.journaux {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.journal {
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.journal ol {
+  margin: 0;
+  padding: 6px 0;
+  list-style: none;
+  font-family: var(--donnee);
+  font-size: 15px;
+}
+
+.journal li {
+  padding: 2px 12px;
+  display: grid;
+  grid-template-columns: 92px 62px 1fr;
+  gap: 10px;
+  align-items: baseline;
+}
+
+.journal .heure {
+  color: var(--encre-tenue);
+}
+
+.journal .marque {
+  font-weight: 700;
+}
+
+.journal li[data-niveau="ok"] .marque {
+  color: var(--nominal);
+}
+
+.journal li[data-niveau="echec"] .marque {
+  color: var(--panne);
+}
+
+.journal li[data-niveau="perdu"] .marque {
+  color: var(--encre);
+  border: 1px solid var(--encre-douce);
+  padding: 0 4px;
+  justify-self: start;
+}
+
+.journal .texte {
+  word-break: break-word;
+}
+
+.avertissement {
+  margin: 18px 0 0;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--trait);
+  border-left: 3px solid var(--panne);
+  font-family: var(--texte);
+  max-width: 92ch;
+}
+
+.avertissement strong {
+  font-family: var(--libelles);
+}
+
+nav a {
+  font-size: 14px;
+  color: var(--nominal);
+}
+
+@media (max-width: 900px) {
+  .journaux {
+    grid-template-columns: 1fr;
+  }
+}

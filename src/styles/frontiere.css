@@ -1,0 +1,129 @@
+/*
+ * La frontière.
+ *
+ * Ce n'est pas un séparateur décoratif : c'est l'objet d'architecture central de la
+ * démonstration. Elle porte les deux étiquettes, et le point de traversée y est
+ * matérialisé, allumé pendant exactement la durée de l'appel.
+ */
+
+.frontiere {
+  position: relative;
+  flex: 0 0 auto;
+  padding: 7px 0 8px;
+  background: var(--fond);
+  border-top: 3px solid var(--encre);
+  border-bottom: 3px solid var(--encre);
+}
+
+.frontiere-etiquette {
+  margin: 0;
+  padding: 0 24px;
+  font-family: var(--libelles);
+  font-size: var(--taille-libelle);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--encre-douce);
+}
+
+.frontiere-etiquette-bas {
+  color: var(--encre-tenue);
+}
+
+.frontiere-ligne {
+  position: relative;
+  height: 28px;
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.frontiere-ligne::before {
+  content: "";
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 50%;
+  height: 1px;
+  background: var(--trait-fort);
+}
+
+/* Le point de traversée ------------------------------------------------------ */
+
+.frontiere-point {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 14px;
+  background: var(--fond);
+  border: 1px solid var(--trait-fort);
+}
+
+.frontiere-pastille {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--trait-fort);
+  background: var(--fond);
+  flex: 0 0 auto;
+}
+
+.frontiere-appel {
+  color: var(--encre);
+  white-space: nowrap;
+}
+
+.frontiere-compteur {
+  color: var(--encre-tenue);
+  border-left: 1px solid var(--trait);
+  padding-left: 10px;
+}
+
+/* États : la seule animation de cette zone, et elle porte une information. */
+
+.frontiere-point[data-etat="en-vol"] {
+  border-color: var(--nominal);
+  background: var(--nominal-voile);
+}
+
+.frontiere-point[data-etat="en-vol"] .frontiere-pastille {
+  border-color: var(--nominal);
+  background: var(--nominal);
+  animation: pulsation-traversee 900ms ease-in-out infinite;
+}
+
+.frontiere-point[data-etat="en-vol"] .frontiere-appel {
+  color: var(--nominal);
+}
+
+.frontiere-point[data-etat="panne"] {
+  border-color: var(--panne);
+  background: var(--panne-voile);
+}
+
+.frontiere-point[data-etat="panne"] .frontiere-pastille {
+  border-color: var(--panne);
+  background: var(--panne);
+}
+
+.frontiere-point[data-etat="panne"] .frontiere-appel {
+  color: var(--panne);
+}
+
+@keyframes pulsation-traversee {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--nominal-voile);
+  }
+  50% {
+    box-shadow: 0 0 0 5px var(--nominal-voile);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .frontiere-point[data-etat="en-vol"] .frontiere-pastille {
+    animation: none;
+  }
+}

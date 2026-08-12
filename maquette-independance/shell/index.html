@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Maquette — résolution à l'exécution</title>
+
+    <!--
+      La carte d'import. C'est un STANDARD DU WEB : sections 8.1.5.2 et 8.1.5.3 du
+      HTML Standard, disponible partout depuis le 27 septembre 2025.
+
+      C'est elle qui résout le spécificateur nu `@socle/bus`, écrit dans des artefacts
+      compilés par des équipes différentes, vers une URL décidée ici, à l'exécution.
+      Aucun des fragments n'a été recompilé pour cela.
+
+      Une seule carte, une seule URL : les deux fragments partagent donc une INSTANCE
+      unique du socle. Voir coexistence.html pour ce qui se passe quand ce n'est plus
+      le cas.
+    -->
+    <script type="importmap">
+      {
+        "imports": {
+          "@socle/bus": "http://localhost:5103/v1/bus.js"
+        }
+      }
+    </script>
+
+    <link rel="stylesheet" href="./maquette.css" />
+  </head>
+
+  <body>
+    <h1>Maquette — résolution à l'exécution et recompilation séparée</h1>
+    <p class="sous-titre">
+      Deux fragments, deux dépôts, deux chaînes de construction, deux origines. Le shell
+      ne connaît que le manifeste. Cette page démontre deux choses, et deux seulement :
+      que la résolution à l'exécution repose sur des standards du web, et qu'un artefact
+      peut être recompilé et re-servi sans qu'un octet des autres ne bouge.
+      <strong>Elle ne démontre pas le déploiement indépendant.</strong>
+    </p>
+
+    <nav><a href="./coexistence.html">→ voir la coexistence de deux versions du socle</a></nav>
+
+    <h2>carte d'import active — standard du web</h2>
+    <pre class="carte-import" id="carte-import"></pre>
+
+    <h2>fragments montés</h2>
+    <div class="fragments" id="fragments"></div>
+
+    <h2>essais</h2>
+    <div class="essais">
+      <button type="button" id="recenser">recenser les instances du socle</button>
+      <button type="button" id="concurrent">charger le dépôt concurrent (port 5104)</button>
+      <button type="button" id="sans-cors">charger depuis une origine sans CORS (port 5105)</button>
+      <button type="button" id="recharger">recharger la page</button>
+    </div>
+
+    <h2>journaux</h2>
+    <div class="journaux">
+      <div class="journal"><ol id="journal-chargement"></ol></div>
+      <div class="journal"><ol id="journal-bus"></ol></div>
+    </div>
+
+    <p class="avertissement">
+      <strong>Ce que cette maquette ne prouve pas.</strong> Les artefacts sont servis
+      depuis le même disque par le même processus ; il n'y a ni chaîne de livraison, ni
+      version immuable publiée, ni retour arrière, ni vérification qu'une combinaison de
+      versions ait jamais été assemblée quelque part. Recompiler séparément n'est pas
+      déployer indépendamment.
+    </p>
+
+    <script type="module" src="./shell.js"></script>
+  </body>
+</html>

@@ -1,0 +1,153 @@
+/*
+ * L'écran de synthèse.
+ *
+ * Replié par défaut. Déplié, il occupe l'écran : c'est la dernière image de la
+ * démonstration, elle doit se lire sans commentaire.
+ */
+
+.synthese {
+  border-top: 3px solid var(--encre);
+  background: var(--surface);
+}
+
+.synthese-resume {
+  padding: 12px 24px;
+  cursor: pointer;
+  font-family: var(--libelles);
+  font-size: var(--taille-corps);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  list-style: none;
+}
+
+.synthese-resume::-webkit-details-marker {
+  display: none;
+}
+
+.synthese-resume::before {
+  content: "▸ ";
+  color: var(--encre-tenue);
+}
+
+.synthese[open] > .synthese-resume::before {
+  content: "▾ ";
+}
+
+.synthese-resume:hover {
+  background: var(--fond-creux);
+}
+
+.synthese-resume:focus-visible {
+  outline: 3px solid var(--nominal);
+  outline-offset: -3px;
+}
+
+.synthese-corps {
+  padding: 4px 24px 32px;
+}
+
+/* Chiffres de la session -------------------------------------------------- */
+
+.chiffres {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(158px, 1fr));
+  gap: 14px;
+  margin-bottom: 22px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--trait);
+}
+
+.chiffre-valeur {
+  margin: 0;
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--encre);
+}
+
+.chiffre-libelle {
+  margin: 2px 0 0;
+  font-family: var(--libelles);
+  font-size: var(--taille-libelle);
+  font-weight: 600;
+  color: var(--encre-douce);
+  line-height: 1.3;
+}
+
+.chiffre-note {
+  margin: 2px 0 0;
+  font-family: var(--texte);
+  font-size: var(--taille-libelle);
+  font-style: italic;
+  color: var(--encre-tenue);
+  line-height: 1.3;
+}
+
+/* Tableau de comparaison --------------------------------------------------- */
+
+.comparaison {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 24px;
+}
+
+.comparaison td,
+.comparaison th {
+  padding: 7px 12px;
+  border: 1px solid var(--trait);
+  text-align: left;
+  vertical-align: top;
+  font-size: var(--taille-corps);
+}
+
+.comparaison thead td {
+  font-family: var(--libelles);
+  font-weight: 700;
+  background: var(--fond-creux);
+  font-size: var(--taille-libelle);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.comparaison th {
+  font-family: var(--libelles);
+  font-weight: 600;
+  color: var(--encre-douce);
+  width: 20%;
+}
+
+.comparaison .colonne-bas {
+  font-family: var(--texte);
+  color: var(--encre);
+  width: 32%;
+}
+
+.comparaison .colonne-haut {
+  font-family: var(--texte);
+  color: var(--encre);
+  width: 48%;
+}
+
+.comparaison tbody tr:nth-child(1) .colonne-haut,
+.comparaison tbody tr:nth-child(2) .colonne-haut,
+.comparaison tbody tr:nth-child(3) .colonne-haut {
+  color: var(--panne);
+  font-weight: 600;
+}
+
+/* Conclusion ---------------------------------------------------------------- */
+
+.conditions {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+  max-width: 900px;
+}
+
+.conditions li {
+  padding-left: 18px;
+  border-left: 3px solid var(--trait-fort);
+  line-height: 1.5;
+}
