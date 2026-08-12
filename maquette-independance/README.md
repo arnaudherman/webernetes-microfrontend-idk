@@ -145,9 +145,10 @@ head -1 equipe-tableau/dist/mf-tableau.js
 head -1 equipe-filtres/dist/mf-filtres.js
 ```
 
-Les deux artefacts contiennent `import { … } from "@socle/bus"`. **Ce nom n'a pas été
-résolu à la compilation.** Sans cela, chaque fragment embarquerait sa propre copie du
-socle et le bus cesserait d'être partagé — sans que rien ne le signale.
+Les deux artefacts dont on vient d'afficher la première ligne contiennent
+`import { … } from "@socle/bus"`. **Ce nom n'a pas été résolu à la compilation.** Sans
+cela, chaque fragment embarquerait sa propre copie du socle et le bus cesserait d'être
+partagé — sans que rien ne le signale.
 
 Vérification mécanique : `grep -c "__instancesSocle" equipe-*/dist/*.js` doit rendre `0`.
 
