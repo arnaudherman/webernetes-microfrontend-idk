@@ -170,6 +170,7 @@ etape("manifeste cohérent avec les artefacts publiés", () => {
       "for(const[n,e]of c){" +
       "const p=e.url.replace(/^http:\\/\\/localhost:5101\\//,'equipe-tableau/publie/')" +
       ".replace(/^http:\\/\\/localhost:5102\\//,'equipe-filtres/publie/')" +
+      ".replace(/^http:\\/\\/localhost:5106\\//,'equipe-calcul/publie/')" +
       ".replace(/^http:\\/\\/localhost:5103\\//,'socle/');" +
       "const h='sha384-'+createHash('sha384').update(readFileSync(p)).digest('base64');" +
       "if(h!==e.integrity)throw new Error(n+' : empreinte du manifeste != artefact '+p);}" +

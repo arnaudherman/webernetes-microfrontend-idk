@@ -1,0 +1,9 @@
+{
+  "name": "equipe-calcul",
+  "private": true,
+  "type": "module",
+  "version": "1.0.0",
+  "scripts": {
+    "build": "wasm-pack build --target web --release --out-dir pkg && vite build"
+  }
+}

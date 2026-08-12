@@ -33,6 +33,7 @@ export const FICHIER_MANIFESTE = join(RACINE, "shell", "manifeste.json");
 const REPERTOIRES = {
   "mf-tableau": { nom: "equipe-tableau", fichier: "mf-tableau.js" },
   "mf-filtres": { nom: "equipe-filtres", fichier: "mf-filtres.js" },
+  "mf-calcul": { nom: "equipe-calcul", fichier: "mf-calcul.js" },
 };
 
 export async function manifesteCourant() {

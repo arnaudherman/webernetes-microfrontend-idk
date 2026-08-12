@@ -34,6 +34,11 @@ const DEPOTS = [
   { nom: "equipe-tableau", balise: "mf-tableau", fichier: "mf-tableau.js", port: 5101 },
   { nom: "equipe-filtres", balise: "mf-filtres", fichier: "mf-filtres.js", port: 5102 },
   { nom: "depot-concurrent", balise: null, fichier: "mf-tableau.js", port: 5104 },
+  // L'équipe calcul publie trois fichiers : son fragment, la glu wasm-bindgen et le
+  // binaire wasm. Les trois sont versionnés ensemble — un binaire sans sa glu, ou
+  // l'inverse, serait une combinaison qui n'a jamais existé.
+  { nom: "equipe-calcul", balise: "mf-calcul", fichier: "mf-calcul.js", port: 5106,
+    annexes: ["pkg/calcul.js", "pkg/calcul_bg.wasm"] },
 ];
 
 const SOCLE = { version: "3.0", chemin: "socle/v3/bus.js", url: "http://localhost:5103/v3/bus.js" };
@@ -83,6 +88,11 @@ for (const depot of DEPOTS) {
 
   await mkdir(repertoire, { recursive: true });
   await writeFile(destination, contenu);
+
+  for (const annexe of depot.annexes ?? []) {
+    const nomAnnexe = annexe.split("/").pop();
+    await writeFile(join(repertoire, nomAnnexe), await readFile(join(RACINE, depot.nom, annexe)));
+  }
   publies.push({ ...depot, version, integrity: empreinte(contenu) });
   console.log(`  ${depot.nom.padEnd(18)} ${version.padEnd(8)} publié → publie/${version}/${depot.fichier}`);
 }

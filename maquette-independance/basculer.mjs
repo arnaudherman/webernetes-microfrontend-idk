@@ -23,6 +23,7 @@ const MANIFESTE = join(RACINE, "shell", "manifeste.json");
 const DEPOTS = {
   "mf-tableau": { nom: "equipe-tableau", fichier: "mf-tableau.js", port: 5101 },
   "mf-filtres": { nom: "equipe-filtres", fichier: "mf-filtres.js", port: 5102 },
+  "mf-calcul": { nom: "equipe-calcul", fichier: "mf-calcul.js", port: 5106 },
 };
 
 async function versionsDisponibles(balise) {

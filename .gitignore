@@ -2,3 +2,8 @@ node_modules/
 dist/
 *.log
 .DS_Store
+
+# Sorties de compilation Rust et wasm-pack. Les artefacts PUBLIÉS, eux, sont
+# versionnés : un clone sans Rust peut faire tourner la maquette.
+target/
+pkg/

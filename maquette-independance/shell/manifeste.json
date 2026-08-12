@@ -14,6 +14,11 @@
       "version": "3.0.0",
       "url": "http://localhost:5102/3.0.0/mf-filtres.js",
       "integrity": "sha384-Y+GUCZnEwKAPVGlOcTmonl/DhNcvZrgx+DUDE5U+gNMRUKkxtHlFM2HF/eVi+f+b"
+    },
+    "mf-calcul": {
+      "version": "1.0.0",
+      "url": "http://localhost:5106/1.0.0/mf-calcul.js",
+      "integrity": "sha384-FcmVBk7K04bo3TGW9No1yFzN+6GSUknwtIfSqSbeo3dX3v1jVj1pV4ZNpZ4D3o3a"
     }
   }
 }

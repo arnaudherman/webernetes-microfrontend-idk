@@ -36,6 +36,7 @@ const SITES = [
   { port: 5102, repertoire: "equipe-filtres/publie", intitule: "équipe filtres", cors: true },
   { port: 5103, repertoire: "socle", intitule: "équipe socle", cors: true },
   { port: 5104, repertoire: "depot-concurrent/publie", intitule: "dépôt concurrent", cors: true },
+  { port: 5106, repertoire: "equipe-calcul/publie", intitule: "équipe calcul (Rust)", cors: true },
   { port: 5105, repertoire: "equipe-sans-cors", intitule: "origine SANS CORS", cors: false, origineIsolee: true },
 ];
 
@@ -46,6 +47,7 @@ const TYPES = {
   ".json": "application/json; charset=utf-8",
   ".css": "text/css; charset=utf-8",
   ".map": "application/json; charset=utf-8",
+  ".wasm": "application/wasm",
 };
 
 function creer(site) {
