@@ -136,6 +136,20 @@ titre("Maquette d'indépendance");
 
 etape("construction des trois dépôts", () => commande("node", ["construire.mjs"], MAQUETTE));
 
+// L'équipe calcul publie trois fichiers indissociables : sans sa glu, le binaire wasm
+// n'est pas chargeable ; sans le binaire, la glu échoue à l'initialisation.
+for (const artefact of [
+  "maquette-independance/equipe-calcul/publie/1.0.0/mf-calcul.js",
+  "maquette-independance/equipe-calcul/publie/1.0.0/calcul.js",
+  "maquette-independance/equipe-calcul/publie/1.0.0/calcul_bg.wasm",
+]) {
+  etape(`artefact wasm ${artefact.split("/").pop()}`, () => fichierNonVide(artefact, 100));
+}
+
+etape("la page de mesures est en place", () =>
+  fichierNonVide("maquette-independance/shell/mesures.js", 3000),
+);
+
 for (const artefact of [
   "maquette-independance/equipe-tableau/dist/mf-tableau.js",
   "maquette-independance/equipe-filtres/dist/mf-filtres.js",

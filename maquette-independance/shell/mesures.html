@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Mesures — le prix des frontières du navigateur</title>
+    <link rel="stylesheet" href="./maquette.css" />
+    <style>
+      table { border-collapse: collapse; margin: 8px 0 20px; font-family: var(--donnee); font-size: 15px; }
+      th, td { padding: 3px 12px; border-bottom: 1px solid var(--trait); text-align: right; }
+      th:first-child, td:first-child { text-align: left; font-family: var(--libelles); }
+      th { color: var(--encre-tenue); font-weight: 600; font-size: var(--taille-libelle); }
+      .bon { color: var(--nominal); font-weight: 700; }
+      .mauvais { color: var(--panne); font-weight: 700; }
+      .attente { color: var(--encre-tenue); font-style: italic; }
+      h3 { margin: 22px 0 2px; font-size: 16px; }
+      .quoi { margin: 0 0 6px; font-family: var(--texte); color: var(--encre-douce); max-width: 80ch; }
+      #lancer { font-size: 15px; padding: 9px 18px; }
+    </style>
+  </head>
+
+  <body>
+    <h1>Mesures — le prix des frontières du navigateur</h1>
+    <p class="sous-titre">
+      Chaque chiffre cité dans les notes de cette étude est reproductible ici, sur votre
+      machine et votre navigateur. Rien n'est codé en dur : tout est mesuré au moment où
+      vous cliquez. Comptez une vingtaine de secondes.
+    </p>
+
+    <div class="essais">
+      <button type="button" id="lancer" class="bouton">lancer toutes les mesures</button>
+    </div>
+
+    <div id="resultats"></div>
+
+    <p class="avertissement">
+      <strong>Ce que ces mesures ne disent pas.</strong> Une seule série, un seul
+      navigateur, une seule machine, sans charge concurrente. Elles donnent des ordres de
+      grandeur et des rapports, pas des valeurs opposables. Les blocages sont mesurés par
+      échantillonnage à 16 ms : la résolution est de cet ordre.
+    </p>
+
+    <script type="module" src="./mesures.js"></script>
+  </body>
+</html>

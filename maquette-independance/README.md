@@ -312,6 +312,47 @@ La parade est de faire porter l'unité **par la donnée** — `{ valeur: 16, uni
 avec `unite` en ensemble fermé, ce que fait le contrat `tache:estimee`. Ce n'est pas une
 limite d'outillage, c'est une décision de modélisation.
 
+## L'équipe calcul — l'indépendance de langage, et son prix
+
+Une cinquième équipe écrit sa logique en Rust, compilée en WebAssembly. Le fragment
+expose la même agrégation trois fois. Mesuré dans Chrome 151, sur 100 000 tâches :
+
+| | |
+|---|---|
+| JavaScript, sans franchir de frontière | 2,34 ms |
+| Rust, avec du JSON à l'aller et au retour | 33,46 ms |
+| Rust, avec des tableaux typés | **0,240 ms** |
+
+**Un facteur 140 entre deux appels au même code Rust**, selon la seule forme des données
+qu'on fait traverser la frontière. L'approche naïve est plus lente que de ne pas franchir
+la frontière du tout : un choix de langage fait pour la performance, associé à du JSON,
+produit un système plus lent que s'il n'avait rien été fait.
+
+C'est la thèse du dépôt transposée d'un cran : **le prix d'une frontière ne tient pas au
+langage, il tient à ce qu'on lui fait traverser.**
+
+Coût d'entrée mesuré : **37,4 ko gzip** — binaire wasm 32,3, glu wasm-bindgen 2,6,
+fragment 2,5. Le « hello world » Rust en pesait 14,7 : `serde` et `serde_json` doublent
+la charge. Il faut télécharger 37 ko pour gagner 2 ms sur 100 000 éléments ; l'arbitrage
+doit être explicite.
+
+Ce que cette équipe ne démontre pas, et que le fragment affiche lui-même : **WebAssembly
+n'a aucun accès au DOM**. Il isole le calcul, jamais l'affichage.
+
+Un clone sans Rust fait tourner la maquette : les artefacts publiés sont versionnés.
+
+## Les mesures, rejouables
+
+`http://localhost:5100/mesures.html` refait sur votre machine tous les chiffres cités
+dans cette étude : qui protège d'un fragment qui boucle, si `terminate()` interrompt
+vraiment, ce que coûte un franchissement par taille, et si la carte d'import traverse la
+frontière du Worker.
+
+La page **refuse de mesurer** si l'onglet est en arrière-plan ou si le fil principal est
+déjà perturbé au repos. Chrome bride les minuteurs d'un onglet masqué à environ un par
+seconde : tous les blocages y rendraient ~1000 ms, référence comprise. Une mesure
+silencieuse et fausse coûte plus cher que pas de mesure.
+
 ## Le piège de vocabulaire
 
 Ne dites pas « monorepo » là où il faut dire « **artefact unique** ». Trois axes sont
