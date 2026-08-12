@@ -136,15 +136,25 @@ titre("Maquette d'indépendance");
 
 etape("construction des trois dépôts", () => commande("node", ["construire.mjs"], MAQUETTE));
 
-// L'équipe calcul publie trois fichiers indissociables : sans sa glu, le binaire wasm
-// n'est pas chargeable ; sans le binaire, la glu échoue à l'initialisation.
-for (const artefact of [
-  "maquette-independance/equipe-calcul/publie/1.0.0/mf-calcul.js",
-  "maquette-independance/equipe-calcul/publie/1.0.0/calcul.js",
-  "maquette-independance/equipe-calcul/publie/1.0.0/calcul_bg.wasm",
-]) {
-  etape(`artefact wasm ${artefact.split("/").pop()}`, () => fichierNonVide(artefact, 100));
-}
+// L'équipe calcul publie trois fichiers INDISSOCIABLES : sans sa glu, le binaire wasm
+// n'est pas chargeable ; sans le binaire, la glu échoue à l'initialisation. On vérifie
+// la version RÉELLEMENT DÉPLOYÉE, lue dans le manifeste — coder une version en dur
+// rendrait la recette verte sur un artefact que plus personne ne sert.
+etape("les trois fichiers wasm de la version déployée", () => {
+  const resultat = commande("node", [
+    "-e",
+    "const{readFileSync,statSync}=require('node:fs');" +
+      "const m=JSON.parse(readFileSync('shell/manifeste.json','utf8'));" +
+      "const v=m.fragments['mf-calcul'].version;" +
+      "for(const f of ['mf-calcul.js','calcul.js','calcul_bg.wasm']){" +
+      "const p='equipe-calcul/publie/'+v+'/'+f;" +
+      "if(statSync(p).size<100)throw new Error(p+' est vide ou tronqué');}" +
+      "console.log('version '+v+', trois fichiers présents')",
+  ], MAQUETTE);
+  if (!resultat.ok) return resultat;
+  console.log(`         │ ${resultat.sortie.trim()}`);
+  return { ok: true };
+});
 
 etape("la page de mesures est en place", () =>
   fichierNonVide("maquette-independance/shell/mesures.js", 3000),
