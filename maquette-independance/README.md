@@ -125,9 +125,10 @@ Aucune dépendance à installer : `servir.mjs` et `empreintes.mjs` n'utilisent q
 | 5100 | shell de composition | `shell/` |
 | 5101 | équipe tableau | `equipe-tableau/dist/` |
 | 5102 | équipe filtres | `equipe-filtres/dist/` |
-| 5103 | équipe socle | `socle/` — versions 1.0 et 2.0 |
+| 5103 | équipe socle | `socle/` — versions 3.0 et 4.0, API identique |
 | 5104 | dépôt concurrent | `depot-concurrent/dist/` |
 | 5105 | origine **sans CORS** | `equipe-sans-cors/` |
+| 5106 | équipe calcul (Rust) | `equipe-calcul/publie/` |
 
 ## Déroulé, environ deux minutes
 
@@ -208,7 +209,7 @@ distinguer un artefact corrompu d'un serveur mal configuré.
 
 **5. La coexistence de deux versions, et ce qu'elle casse.**
 Ouvrir <http://localhost:5100/coexistence.html>. La carte d'import y porte une clé
-`scopes` : tout ce qui vient du port 5102 résout `@socle/bus` vers la version 2.0.
+`scopes` : tout ce qui vient du port 5102 résout `@socle/bus` vers la version 4.0.
 
 C'est le **seul moyen standard** de faire coexister deux versions d'une dépendance
 partagée. Il est déclaratif et **sans négociation**.

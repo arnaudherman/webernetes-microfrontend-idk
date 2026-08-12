@@ -200,13 +200,13 @@ await reecrireCarte("index.html", {
   integrity: integrite,
 });
 
-const urlSocleV2 = "http://localhost:5103/v2/bus.js";
-const integriteV2 = empreinte(await readFile(join(RACINE, "socle/v2/bus.js")));
+const urlSocleCoexistence = "http://localhost:5103/v4/bus.js";
+const integriteCoexistence = empreinte(await readFile(join(RACINE, "socle/v4/bus.js")));
 
 await reecrireCarte("coexistence.html", {
   imports: { "@socle/bus": SOCLE.url },
-  scopes: { "http://localhost:5102/": { "@socle/bus": urlSocleV2 } },
-  integrity: { ...integrite, [urlSocleV2]: integriteV2 },
+  scopes: { "http://localhost:5102/": { "@socle/bus": urlSocleCoexistence } },
+  integrity: { ...integrite, [urlSocleCoexistence]: integriteCoexistence },
 });
 
 /* ------------------------------------------------------------------- rapport */

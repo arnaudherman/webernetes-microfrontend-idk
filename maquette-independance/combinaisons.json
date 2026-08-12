@@ -23,6 +23,17 @@
       "enregistree": "2026-08-12 11:31:39"
     },
     {
+      "cle": "mf-calcul@1.2.0 + mf-filtres@3.1.0 + mf-tableau@1.2.0 + socle@3.0",
+      "versions": {
+        "mf-calcul": "1.2.0",
+        "mf-filtres": "3.1.0",
+        "mf-tableau": "1.2.0",
+        "socle": "3.0"
+      },
+      "preuve": "test de fumée du shell, 4 contrôles — Chrome/151.0.0.0 Safari/537.36",
+      "enregistree": "2026-08-12 11:39:12"
+    },
+    {
       "cle": "mf-filtres@3.0.0 + mf-tableau@1.0.0 + socle@3.0",
       "versions": {
         "mf-filtres": "3.0.0",

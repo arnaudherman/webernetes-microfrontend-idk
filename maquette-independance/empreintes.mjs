@@ -25,8 +25,8 @@ const RACINE = dirname(fileURLToPath(import.meta.url));
 const ARTEFACTS = [
   { equipe: "équipe tableau", chemin: "equipe-tableau/dist/mf-tableau.js" },
   { equipe: "équipe filtres", chemin: "equipe-filtres/dist/mf-filtres.js" },
-  { equipe: "équipe socle (v1)", chemin: "socle/v1/bus.js" },
-  { equipe: "équipe socle (v2)", chemin: "socle/v2/bus.js" },
+  { equipe: "équipe socle (v3)", chemin: "socle/v3/bus.js" },
+  { equipe: "équipe socle (v4)", chemin: "socle/v4/bus.js" },
   { equipe: "dépôt concurrent", chemin: "depot-concurrent/dist/mf-tableau.js" },
 ];
 

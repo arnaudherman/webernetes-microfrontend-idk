@@ -164,8 +164,8 @@ for (const artefact of [
   "maquette-independance/equipe-tableau/dist/mf-tableau.js",
   "maquette-independance/equipe-filtres/dist/mf-filtres.js",
   "maquette-independance/depot-concurrent/dist/mf-tableau.js",
-  "maquette-independance/socle/v1/bus.js",
-  "maquette-independance/socle/v2/bus.js",
+  "maquette-independance/socle/v3/bus.js",
+  "maquette-independance/socle/v4/bus.js",
 ]) {
   etape(`artefact ${artefact.split("/").slice(1, 2)[0]}/…`, () => fichierNonVide(artefact, 100));
 }

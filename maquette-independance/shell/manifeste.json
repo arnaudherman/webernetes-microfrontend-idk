@@ -16,9 +16,9 @@
       "integrity": "sha384-Y+GUCZnEwKAPVGlOcTmonl/DhNcvZrgx+DUDE5U+gNMRUKkxtHlFM2HF/eVi+f+b"
     },
     "mf-calcul": {
-      "version": "1.1.0",
-      "url": "http://localhost:5106/1.1.0/mf-calcul.js",
-      "integrity": "sha384-V6ztfvjJkZHipkl3Yuv1Rjdr1eBpcmNzcn+ulsCnOacxfPt5immFUeJ8kEhiAWHM"
+      "version": "1.2.0",
+      "url": "http://localhost:5106/1.2.0/mf-calcul.js",
+      "integrity": "sha384-9njyfUSPg9fVoLL3RNxWUjlbNocG29jS/X4ADpCv5hnC4avJUaI/mN0kVplYGR4Y"
     }
   }
 }
