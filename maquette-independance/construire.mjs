@@ -2,7 +2,7 @@
 /**
  * Construit les artefacts. Chaque dépôt a sa propre chaîne, et ne connaît pas les autres.
  *
- *   node construire.mjs                  construit les trois dépôts
+ *   node construire.mjs                  construit les quatre dépôts
  *   node construire.mjs equipe-tableau   n'en construit qu'un — c'est la preuve centrale
  */
 

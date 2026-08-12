@@ -139,7 +139,7 @@ titre("Maquette d'indépendance");
 // cents lignes sans filet, jusqu'à ce que cette étape existe.
 etape("typecheck de la maquette", () => commande("npx", ["tsc", "--noEmit", "-p", "tsconfig.json"], MAQUETTE));
 
-etape("construction des trois dépôts", () => commande("node", ["construire.mjs"], MAQUETTE));
+etape("construction des quatre dépôts", () => commande("node", ["construire.mjs"], MAQUETTE));
 
 // L'équipe calcul publie trois fichiers INDISSOCIABLES : sans sa glu, le binaire wasm
 // n'est pas chargeable ; sans le binaire, la glu échoue à l'initialisation. On vérifie

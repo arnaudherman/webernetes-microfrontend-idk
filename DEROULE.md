@@ -157,7 +157,7 @@ Montrer la carte d'import affichée en haut de page.
 > qui résout le nom `@socle/bus`, écrit dans des artefacts compilés séparément, vers une
 > URL décidée ici, à l'exécution. »
 
-Cliquer *recenser les instances du socle* : **une seule instance**, alors que deux
+Cliquer *recenser les instances du socle* : **une seule instance**, alors que trois
 artefacts compilés séparément l'importent.
 
 ### 9:00 · La preuve centrale
@@ -240,17 +240,18 @@ Puis les deux refus, dans cet ordre :
 
 Ouvrir <http://localhost:5100/coexistence.html>.
 
-> « L'équipe filtres migre vers le socle 2.0, l'équipe tableau reste en 1.0. La carte
-> d'import le permet, avec sa clé `scopes` — c'est le seul moyen standard, et il est
+> « La clé `scopes` de la carte d'import fait résoudre `@socle/bus` vers le socle 4.0 pour
+> l'équipe filtres, et vers le 3.0 pour tout le reste. Deux URL, pour une API strictement
+> identique — c'est le seul moyen standard de faire coexister deux versions, et il est
 > déclaratif, sans négociation. »
 
 Cliquer un filtre. Montrer, dans l'ordre :
 
 | à l'écran | |
 |---|---|
-| `mf-tableau` lié à | `socle@1.0` |
-| `mf-filtres` lié à | `socle@2.0` |
-| `publier()` retourne | **0 abonné** |
+| `mf-tableau` lié à | `socle@3.0` |
+| `mf-filtres` lié à | `socle@4.0` |
+| le verdict de `publier()` | **`remis: false`** — « charge conforme, mais aucun abonné ne l'écoutait » |
 | le tableau reçoit | **rien** |
 | recensement | **2 instances** |
 

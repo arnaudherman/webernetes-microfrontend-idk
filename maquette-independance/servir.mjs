@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * Cinq « équipes », six serveurs, zéro dépendance.
+ * Cinq « équipes », sept serveurs, zéro dépendance.
  *
- * Un seul processus expose six racines statiques sur six ports. Le nombre de
+ * Un seul processus expose sept racines statiques sur sept ports. Le nombre de
  * processus n'a aucune importance pour ce qu'on démontre : ce qui compte est que
  * chaque artefact est servi depuis sa propre origine, relu sur le disque à chaque
  * requête, et qu'aucun redémarrage n'est nécessaire quand l'un d'eux est recompilé.
@@ -154,7 +154,7 @@ function creer(site) {
 }
 
 /**
- * Un port occupé ne doit pas tuer les six serveurs sur une trace d'erreur brute.
+ * Un port occupé ne doit pas tuer les sept serveurs sur une trace d'erreur brute.
  * En salle, un processus resté en vie d'une session précédente est le scénario le
  * plus probable, et le message par défaut de Node n'aide personne.
  */
@@ -181,7 +181,7 @@ function ecouter(site) {
 const serveurs = [];
 for (const site of SITES) serveurs.push(await ecouter(site));
 
-console.log("\nMaquette d'indépendance de déploiement — six origines\n");
+console.log("\nMaquette d'indépendance de déploiement — sept origines\n");
 for (const { site } of serveurs) {
   const marque = site.cors ? "" : "   ← sert sans en-tête CORS, volontairement";
   console.log(`  http://localhost:${site.port}/  ${site.intitule.padEnd(22)}${site.repertoire}${marque}`);

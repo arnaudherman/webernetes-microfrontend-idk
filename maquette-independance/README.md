@@ -74,7 +74,7 @@ déployer une inconnue :
 
 ```
 REFUS — cette combinaison n'a jamais été assemblée :
-    mf-filtres@1.0.0 + mf-tableau@1.1.0 + socle@1.0
+    mf-calcul@1.2.0 + mf-filtres@3.2.0 + mf-tableau@1.1.0 + socle@3.0
 ```
 
 Le cycle complet : `basculer --non-approuvee` pour assembler, vérifier dans le
@@ -89,9 +89,9 @@ approuvée à la légère est une combinaison approuvée.
 ## Démarrage
 
 ```
-node construire.mjs      compile les trois dépôts vers leur dist/
+node construire.mjs      compile les quatre dépôts vers leur dist/
 node publier.mjs         publie sous publie/<version>/, régénère manifeste et cartes
-node servir.mjs          lance les six origines, Ctrl-C pour tout arrêter
+node servir.mjs          lance les sept origines, Ctrl-C pour tout arrêter
 ```
 
 ### Publier n'est pas déployer
@@ -118,15 +118,15 @@ Aucune dépendance à installer : `servir.mjs` et `empreintes.mjs` n'utilisent q
 `node:http`, `node:fs` et `node:crypto`. La construction réutilise le Vite déjà présent
 à la racine du dépôt. Tout fonctionne hors ligne.
 
-## Les six origines
+## Les sept origines
 
 | Port | Rôle | Sert |
 |---|---|---|
 | 5100 | shell de composition | `shell/` |
-| 5101 | équipe tableau | `equipe-tableau/dist/` |
-| 5102 | équipe filtres | `equipe-filtres/dist/` |
+| 5101 | équipe tableau | `equipe-tableau/publie/` |
+| 5102 | équipe filtres | `equipe-filtres/publie/` |
 | 5103 | équipe socle | `socle/` — versions 3.0 et 4.0, API identique |
-| 5104 | dépôt concurrent | `depot-concurrent/dist/` |
+| 5104 | dépôt concurrent | `depot-concurrent/publie/` |
 | 5105 | origine **sans CORS** | `equipe-sans-cors/` |
 | 5106 | équipe calcul (Rust) | `equipe-calcul/publie/` |
 
@@ -135,7 +135,7 @@ Aucune dépendance à installer : `servir.mjs` et `empreintes.mjs` n'utilisent q
 **0. Annoncer les limites** — la section ci-dessus. Une démonstration qui annonce ses
 limites prouve moins, mais tient.
 
-**1. Montrer la séparation des sources.** Trois répertoires, trois `package.json`, trois
+**1. Montrer la séparation des sources.** Quatre répertoires, quatre `package.json`, quatre
 `vite.config.ts`. Aucun ne connaît les autres.
 
 **2. Montrer que le spécificateur nu survit à la compilation.**
@@ -151,11 +151,12 @@ socle et le bus cesserait d'être partagé — sans que rien ne le signale.
 
 Vérification mécanique : `grep -c "__instancesSocle" equipe-*/dist/*.js` doit rendre `0`.
 
-**3. Ouvrir le shell.** Les deux fragments se chargent depuis deux origines différentes.
+**3. Ouvrir le shell.** Les trois fragments se chargent depuis trois origines différentes.
 Le journal de gauche montre le manifeste puis chaque chargement. Cliquer un filtre : le
-tableau reçoit la charge utile, et `publier()` retourne **1 abonné**.
+tableau reçoit la charge utile, et `publier()` rend son verdict — à l'écran,
+**`remis à 2 abonné(s) : mf-tableau, mf-calcul`**.
 
-Cliquer « recenser les instances du socle » : **une seule instance**, alors que deux
+Cliquer « recenser les instances du socle » : **une seule instance**, alors que trois
 artefacts compilés séparément l'importent.
 
 **4. LA PREUVE CENTRALE.** C'est la seule étape qui compte vraiment.
@@ -216,8 +217,9 @@ partagée. Il est déclaratif et **sans négociation**.
 
 Cliquer un filtre. Résultat mesuré :
 
-- `mf-tableau` est lié à `socle@1.0`, `mf-filtres` à `socle@2.0` ;
-- `publier()` retourne **0 abonné** ;
+- `mf-tableau` est lié à `socle@3.0`, `mf-filtres` à `socle@4.0` ;
+- `publier()` rend **`remis: false`** — à l'écran, *charge conforme, mais aucun abonné ne
+  l'écoutait* ;
 - le tableau ne reçoit **rien** ;
 - le recensement montre **deux instances** du socle ;
 - **aucune exception, aucun avertissement, aucune entrée dans la console.**
@@ -259,7 +261,7 @@ coût du modèle, et aucune n'est fournie par le navigateur.
 
 ## La vérification de forme — et la question qui décide de tout
 
-`socle/v1/contrats.js` déclare la forme attendue de chaque événement contractualisé, et
+`socle/v3/contrats.js` déclare la forme attendue de chaque événement contractualisé, et
 `publier()` valide **avant** remise. Une charge non conforme n'est remise à personne :
 
 ```

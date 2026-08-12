@@ -13,11 +13,12 @@
       par spécificateur et par portée, et le scope le plus spécifique l'emporte.
 
       Ici, tout ce qui est chargé depuis l'origine de l'équipe filtres (port 5102)
-      résout `@socle/bus` vers la version 2.0. Tout le reste garde la 1.0.
+      résout `@socle/bus` vers la version 4.0. Tout le reste garde la 3.0.
 
       La contrepartie n'est pas négociable et n'est signalée par rien : deux URL, c'est
       deux instances de module, donc deux états. Les deux fragments croient parler au
-      même bus. `publier()` retournera 0.
+      même bus. `publier()` rendra `{ remis: false, abonnes: [] }` : charge conforme,
+      personne à qui la remettre.
     -->
     <!-- CARTE-DEBUT -->
     <script type="importmap">
@@ -48,10 +49,12 @@
   <body>
     <h1>Maquette — coexistence de deux versions du socle</h1>
     <p class="sous-titre">
-      L'équipe filtres a migré vers le socle 2.0, l'équipe tableau est restée en 1.0. La
-      carte d'import permet aux deux de cohabiter, sans recompilation et sans
-      négociation. Cliquez un filtre, puis regardez le nombre d'abonnés retourné et
-      l'identifiant de socle affiché par chaque fragment.
+      Deux URL pour la même dépendance : la clé scopes de la carte d'import fait résoudre
+      @socle/bus vers le socle 4.0 pour l'équipe filtres, et vers le 3.0 pour tout le
+      reste. Les deux socles ont une API strictement identique — seul le numéro, donc
+      l'URL, donc l'instance, change. Cliquez un filtre, puis regardez l'identifiant de
+      socle affiché par chaque fragment : ce sont deux instances, donc deux états, et le
+      message ne traverse pas.
     </p>
 
     <nav><a href="./index.html">→ revenir au cas nominal, une seule version</a> &nbsp;·&nbsp; <a href="./mesures.html">→ mesures reproductibles du prix des frontières</a></nav>
