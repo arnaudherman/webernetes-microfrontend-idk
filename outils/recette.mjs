@@ -134,6 +134,11 @@ etape("README de la maquette présent", () =>
 
 titre("Maquette d'indépendance");
 
+// Les fragments de la maquette n'étaient vérifiés par AUCUN typecheck : la
+// configuration racine ne couvre que src/, et Vite transpile sans contrôler. Sept
+// cents lignes sans filet, jusqu'à ce que cette étape existe.
+etape("typecheck de la maquette", () => commande("npx", ["tsc", "--noEmit", "-p", "tsconfig.json"], MAQUETTE));
+
 etape("construction des trois dépôts", () => commande("node", ["construire.mjs"], MAQUETTE));
 
 // L'équipe calcul publie trois fichiers INDISSOCIABLES : sans sa glu, le binaire wasm

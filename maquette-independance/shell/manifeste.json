@@ -11,9 +11,9 @@
       "integrity": "sha384-vE60KIm7LsQEzkzZTtJA6Gzr1oa64Z2yH5de63dC/V7hCLdU8R7lwUNkAjW1T+XA"
     },
     "mf-filtres": {
-      "version": "3.1.0",
-      "url": "http://localhost:5102/3.1.0/mf-filtres.js",
-      "integrity": "sha384-Y+GUCZnEwKAPVGlOcTmonl/DhNcvZrgx+DUDE5U+gNMRUKkxtHlFM2HF/eVi+f+b"
+      "version": "3.2.0",
+      "url": "http://localhost:5102/3.2.0/mf-filtres.js",
+      "integrity": "sha384-F/lUQ3DBRjNx+pkop7i5mZ3rKEnBnIKEinawpSALYTr9qLTRB31q/A+bYiDZWjoD"
     },
     "mf-calcul": {
       "version": "1.2.0",
