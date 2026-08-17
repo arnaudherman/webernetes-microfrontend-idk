@@ -10,7 +10,7 @@ import { contratDe, type Fragment } from "./contrat";
  * ne connaît ni leur état ni leur rendu, et ne peut pas atteindre leur DOM : chaque
  * fragment vit derrière son propre Shadow DOM.
  *
- * C'est ce qui rend l'essai 6 possible : remplacer une implémentation par une autre
+ * C'est ce qui rend l'essai 8 possible : remplacer une implémentation par une autre
  * ne demande au shell que de changer un nom de balise.
  */
 

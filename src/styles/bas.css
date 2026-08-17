@@ -1,18 +1,100 @@
 /*
- * Moitié basse : le cluster.
+ * Moitié basse : quatre processus, observés à distance.
  *
  * Traitement graphique volontairement différent de la moitié haute — cartes
- * encadrées, colonnes par nœud, adresses IP partout. On ne doit jamais confondre
- * cette vue avec le rail du bus.
+ * encadrées, ports et pid partout. On ne doit jamais confondre cette vue avec le
+ * rail du bus.
  */
 
-.journal-cluster .ligne {
-  grid-template-columns: 106px 46px minmax(140px, 1.1fr) 46px 84px minmax(200px, 2fr);
+/* Voir `--hauteur-journal-bas` : à hauteur égale avec le journal du bus, l'en-tête
+   de celui-ci — légende sur deux lignes plus le bandeau de réserve — ne laissait que
+   quatre lignes visibles sur vingt-quatre. */
+.journal-collecte {
+  height: var(--hauteur-journal-bas);
 }
 
-.journal-cluster .ligne-evenement .verbe {
+/*
+ * Deux colonnes étaient trop étroites d'un cheveu, et l'ellipse emportait ce qu'on
+ * était venu lire.
+ *
+ * `heure` : 100 px pour 109 px de contenu. `11:47:55.544` devenait `11:47:55.5…` sur
+ * CHAQUE ligne. Les millisecondes ne sont pas un ornement ici : la corrélation entre
+ * les deux journaux se lit sur elles.
+ *
+ * `service` : 76 px pour 91 px. `passerelle` devenait `passere…` — le nom du service
+ * dont toute la démonstration compare les deux positions.
+ *
+ * 116 et 98, et non 109 et 91 : une colonne réglée au pixel près sur le contenu du
+ * jour n'est pas réglée. Ces deux-là avaient déjà été calculées trop juste une fois.
+ *
+ * Les colonnes souples absorbent les 38 px : à 1280 px, `cible` garde 319 px et
+ * `chemin` 511 px, l'une et l'autre au-dessus de leur minimum.
+ */
+.journal-collecte .ligne {
+  grid-template-columns: 14px 116px 98px minmax(120px, 1fr) 40px 62px minmax(180px, 1.6fr);
+}
+
+/* L'origine de la ligne : rapportée par un service, ou constatée par la console.
+   La distinction n'est pas décorative — la console déclenche les pannes ET collecte
+   le journal. Sans elle, on pourrait soupçonner le journal de narrer ce que la
+   console a décidé plutôt que ce qui s'est produit. */
+.journal-collecte .origine {
+  font-weight: 700;
+  color: var(--encre-tenue);
+}
+
+.journal-collecte .ligne[data-origine="console"] {
+  background: var(--fond-creux);
+}
+
+.journal-collecte .ligne[data-origine="console"] .origine {
+  color: var(--encre-douce);
+}
+
+.journal-collecte .service {
+  color: var(--encre-douce);
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.journal-collecte .ligne-commande .cible,
+.journal-collecte .ligne-systeme .cible,
+.journal-collecte .ligne-note .cible {
   color: var(--encre-tenue);
   font-weight: 500;
+}
+
+/* L'état du lien vers la console. Un journal vide qui ne s'explique pas est le pire
+   mensonge qu'un journal puisse faire : quand le flux tombe, la page le dit. */
+/* Le statut du journal : ce n'est pas une légende de colonnes, c'est une réserve sur
+   la NATURE de ce qu'on lit. Il occupe sa propre bande, sous l'en-tête, parce qu'on
+   doit le lire avant les lignes et non le prendre pour l'une d'elles. */
+.journal-statut {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 5px 24px 6px;
+  border-bottom: 1px solid var(--trait);
+  background: var(--fond-creux);
+  font-size: var(--taille-libelle);
+  color: var(--encre-douce);
+}
+
+.journal-statut strong {
+  color: var(--encre);
+  font-weight: 700;
+}
+
+.lien-console {
+  margin: 4px 0 0;
+  font-size: var(--taille-libelle);
+  color: var(--encre-tenue);
+}
+
+.lien-console[data-etat="rompu"] {
+  color: var(--panne);
+  font-weight: 600;
 }
 
 .topologie {
@@ -34,135 +116,117 @@
   font-weight: 600;
 }
 
-.noeuds {
+.processus-grille {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
-.noeud {
-  border: 1px solid var(--trait-fort);
-  background: var(--surface);
-  min-height: 208px;
-  display: flex;
-  flex-direction: column;
-}
-
-.noeud-tete {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 6px 10px;
-  border-bottom: 1px solid var(--trait);
-  background: var(--fond-creux);
-  font-size: var(--taille-libelle);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
-.noeud-ip {
-  font-weight: 500;
-  color: var(--encre-tenue);
-}
-
-.noeud-pods {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 10px;
-}
-
-.noeud-vide {
+/* L'état « rien rapporté » occupe toute la grille : c'est une phrase, pas une carte
+   de service manquante, et le confondre avec une carte serait refaire le défaut. */
+.aucun-service {
+  grid-column: 1 / -1;
   margin: 0;
-  color: var(--encre-tenue);
+  max-width: 76ch;
   font-size: var(--taille-libelle);
-  font-style: italic;
+  color: var(--encre-tenue);
 }
 
-/* Carte de pod ---------------------------------------------------------------- */
+/* La console est décrite en toutes lettres, hors de la grille. L'y mettre lui
+   donnerait le statut d'un composant de l'architecture, alors qu'elle occupe la
+   place de la main de l'opérateur et du collecteur de journaux. */
+.hors-architecture {
+  margin: 14px 0 0;
+  padding-left: 12px;
+  border-left: 2px dashed var(--trait-fort);
+  color: var(--encre-tenue);
+  font-size: var(--taille-libelle);
+  max-width: 78ch;
+}
 
-.pod {
+/* Carte de processus ---------------------------------------------------------- */
+
+.processus {
   border: 1px solid var(--trait);
   border-left: 4px solid var(--trait-fort);
-  padding: 7px 10px;
+  padding: 10px 12px;
   background: var(--surface);
+  min-height: 92px;
 }
 
-.pod-nom {
+.processus-nom {
   font-size: var(--taille-donnee);
   color: var(--encre);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  font-weight: 600;
 }
 
-.pod-meta {
+.processus-meta {
   display: flex;
   align-items: baseline;
   gap: 10px;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
-.pod-phase {
+.processus-phase {
   font-family: var(--libelles);
   font-size: var(--taille-libelle);
   font-weight: 700;
   letter-spacing: 0.03em;
 }
 
-.pod-ip {
+.processus-pid {
   color: var(--encre-tenue);
 }
 
-.pod-etat {
-  margin-top: 2px;
+.processus-etat {
+  margin-top: 4px;
   font-size: var(--taille-libelle);
   color: var(--encre-tenue);
 }
 
-.pod[data-presentation="actif"] {
+.processus[data-presentation="actif"] {
   border-left-color: var(--nominal);
 }
 
-.pod[data-presentation="actif"] .pod-phase {
+.processus[data-presentation="actif"] .processus-phase {
   color: var(--nominal);
 }
 
-.pod[data-presentation="attente"] {
-  border-left-color: var(--trait-fort);
-}
-
-.pod[data-presentation="attente"] .pod-phase {
-  color: var(--encre-douce);
-}
-
-/* Une suppression volontaire n'est pas une panne : le pod passe par phase Failed
-   pendant environ une seconde avant de disparaître. On ne le peint pas en rouge. */
-.pod[data-presentation="terminaison"] {
-  border-left-color: var(--encre-tenue);
-  border-style: dashed;
-  opacity: 0.72;
-}
-
-.pod[data-presentation="terminaison"] .pod-phase {
-  color: var(--encre-tenue);
-}
-
-.pod[data-presentation="echec"] {
+/* Figé : vivant et muet. Ce n'est ni un état nominal ni une mort, et le montrer
+   comme l'un des deux effacerait l'essai 3. */
+.processus[data-presentation="fige"] {
   border-left-color: var(--panne);
+  border-style: dashed;
 }
 
-.pod[data-presentation="echec"] .pod-phase {
+.processus[data-presentation="fige"] .processus-phase {
   color: var(--panne);
 }
 
+.processus[data-presentation="muet"] {
+  border-left-color: var(--panne);
+}
+
+.processus[data-presentation="muet"] .processus-phase {
+  color: var(--panne);
+}
+
+.processus[data-presentation="absent"] {
+  border-left-color: var(--encre-tenue);
+  border-style: dashed;
+  opacity: 0.62;
+}
+
+.processus[data-presentation="absent"] .processus-phase {
+  color: var(--encre-tenue);
+}
+
 /* Trafic : la seule animation autorisée ici, elle porte une information. */
-.pod-trafic {
+.processus-trafic {
   animation: impulsion-nominale 700ms ease-out;
 }
 
-.pod-trafic-panne {
+.processus-trafic-panne {
   animation: impulsion-panne 700ms ease-out;
 }
 
@@ -182,18 +246,4 @@
   100% {
     background: var(--surface);
   }
-}
-
-/* Services -------------------------------------------------------------------- */
-
-.services {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 20px;
-  margin-top: 12px;
-  color: var(--encre-douce);
-}
-
-.service {
-  white-space: nowrap;
 }

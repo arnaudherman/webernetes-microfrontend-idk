@@ -5,13 +5,21 @@
  * chiffre vieillit, la machine change, le navigateur change. Une affirmation qui
  * repose sur un chiffre qu'on peut refaire devant la salle ne l'est pas.
  *
- * Cinq mesures, dans l'ordre où elles décident quelque chose :
+ * ─────────────────────────────────────────────────────────────────────────────
+ * TROIS MESURES ONT ÉTÉ RETIRÉES DE CETTE PAGE
+ * ─────────────────────────────────────────────────────────────────────────────
  *
- *   1. Qui protège du fragment fou ?      Worker contre iframe, même origine et même site.
- *   2. Peut-on l'arrêter ?                terminate() sur une boucle non coopérative.
- *   3. Que coûte le passage ?             appel direct contre aller-retour Worker, par taille.
- *   4. Que coûte un Worker ?              démarrage à vide, et avec un module chargé par HTTP.
- *   5. La résolution traverse-t-elle ?    la carte d'import s'applique-t-elle dans un Worker ?
+ * Elle en portait cinq. Trois ont été supprimées, avec le code qui les produisait —
+ * l'isolation Worker contre iframe, le coût de démarrage d'un Worker, et la traversée
+ * de la carte d'import. Motif :
+ *
+ *   ces trois mesures ne distinguent pas un résultat négatif d'un test qui n'a pas
+ *   eu lieu.
+ *
+ * Deux subsistent, et elles se suffisent :
+ *
+ *   1. Peut-on l'arrêter ?     terminate() sur une boucle non coopérative.
+ *   2. Que coûte le passage ?  aller-retour Worker, par taille de charge utile.
  */
 
 const zone = document.querySelector("#resultats");
@@ -59,7 +67,12 @@ function remplir(table, entetes, lignes) {
   }
 }
 
-/** Échantillonne la réactivité du fil principal ; rend le plus grand trou observé. */
+/**
+ * Échantillonne la réactivité du fil principal ; rend le plus grand trou observé.
+ *
+ * Ne sert plus qu'au contrôle d'environnement ci-dessous : la mesure qui l'exploitait
+ * pour publier un tableau a été retirée.
+ */
 function sonderFilPrincipal(dureeMs) {
   return new Promise((resoudre) => {
     const debut = performance.now();
@@ -83,54 +96,9 @@ const bloquer = (ms) => `const fin=Date.now()+${ms};while(Date.now()<fin){};`;
 
 /* ------------------------------------------------------------------ mesure 1 */
 
-async function quiProtege() {
-  const table = section(
-    "1. Qui protège d'un fragment qui part en boucle ?",
-    "Un fragment bloque son fil pendant deux secondes. On regarde si le fil principal " +
-      "de la page — celui qui rend l'interface — est figé pendant ce temps.",
-  );
-
-  const reference = await sonderFilPrincipal(1200);
-
-  const w = creerWorker(`self.onmessage=()=>{${bloquer(2000)}self.postMessage(1)};`);
-  const finWorker = new Promise((r) => (w.onmessage = r));
-  w.postMessage("go");
-  const avecWorker = await sonderFilPrincipal(2200);
-  await finWorker;
-  w.terminate();
-
-  const cadre = document.createElement("iframe");
-  cadre.style.cssText = "position:fixed;left:-9999px;width:10px;height:10px";
-  document.body.append(cadre);
-  await new Promise((r) => { cadre.onload = r; cadre.src = "about:blank"; });
-  setTimeout(() => { try { cadre.contentWindow.eval(bloquer(2000)); } catch { /* ignoré */ } }, 50);
-  const avecIframeMemeOrigine = await sonderFilPrincipal(2400);
-  cadre.remove();
-
-  const cadre2 = document.createElement("iframe");
-  cadre2.style.cssText = "position:fixed;left:-9999px;width:10px;height:10px";
-  document.body.append(cadre2);
-  setTimeout(() => { cadre2.src = "http://localhost:5105/bloqueur.html#2000"; }, 60);
-  const avecIframeAutreOrigine = await sonderFilPrincipal(2600);
-  cadre2.remove();
-
-  const juger = (v) => ({ texte: `${v} ms`, ton: v > 500 ? "mauvais" : "bon" });
-
-  remplir(table, ["frontière", "fil principal bloqué", "verdict"], [
-    ["aucune (référence)", juger(reference), "—"],
-    ["Web Worker", juger(avecWorker), "protège"],
-    ["iframe même origine", juger(avecIframeMemeOrigine), "ne protège pas"],
-    ["iframe autre origine, même site (port 5105)", juger(avecIframeAutreOrigine), "ne protège pas"],
-  ]);
-
-  return { reference, avecWorker, avecIframeMemeOrigine, avecIframeAutreOrigine };
-}
-
-/* ------------------------------------------------------------------ mesure 2 */
-
 async function peutOnArreter() {
   const table = section(
-    "2. Peut-on arrêter un fragment qui ne coopère pas ?",
+    "1. Peut-on arrêter un fragment qui ne coopère pas ?",
     "Un Worker part dans une boucle de soixante secondes qui n'écoute rien. On appelle " +
       "terminate() après trois cents millisecondes.",
   );
@@ -152,39 +120,28 @@ async function peutOnArreter() {
       { texte: survecu ? "OUI — non interrompu" : "NON — interrompu", ton: survecu ? "mauvais" : "bon" },
       "", "",
     ],
-    ["fil principal pendant ce temps", { texte: "non affecté", ton: "bon" }, "", ""],
   ]);
 
   return { dureeAppel, survecu };
 }
 
-/* ------------------------------------------------------------------ mesure 3 */
+/* ------------------------------------------------------------------ mesure 2 */
 
 async function prixDuPassage() {
   const table = section(
-    "3. Que coûte un franchissement de frontière ?",
-    "Le même objet, passé par un appel de fonction puis par un aller-retour vers un " +
-      "Worker. La dernière colonne isole la part de (dé)sérialisation.",
+    "2. Que coûte un franchissement de frontière ?",
+    "Le même objet, passé par un aller-retour vers un Worker, à quatre tailles. La " +
+      "dernière colonne isole la part de (dé)sérialisation.",
   );
 
   const tache = (i) => ({ id: "T-" + i, titre: "tâche numéro " + i, statut: "a-faire",
     responsable: "A. Mercier", echeance: "2026-09-04", chargeJours: 4 });
   const charge = (n) => ({ taches: Array.from({ length: n }, (_, i) => tache(i)) });
 
-  const f = (c) => c;
-  const petit = charge(8);
-  let t = performance.now();
-  for (let i = 0; i < 300000; i++) f(petit);
-  const appelDirect = (performance.now() - t) / 300000;
-
   const w = creerWorker(`self.onmessage=(e)=>self.postMessage(e.data);`);
   await new Promise((r) => { w.onmessage = r; w.postMessage(0); });
 
-  const lignes = [[
-    "appel de fonction direct",
-    { texte: `${Math.round(appelDirect * 1e6)} ns`, ton: "bon" },
-    "—", "—",
-  ]];
+  const lignes = [];
 
   for (const n of [8, 90, 430, 3100]) {
     const c = charge(n);
@@ -205,109 +162,20 @@ async function prixDuPassage() {
     lignes.push([
       `aller-retour Worker, ${(octets / 1024).toFixed(1)} ko`,
       { texte: `${arrondir(allerRetour)} ms` },
-      `×${Math.round(allerRetour / appelDirect).toLocaleString("fr-FR")}`,
       `${arrondir(clone)} ms de clonage`,
     ]);
   }
   w.terminate();
 
-  remplir(table, ["opération", "durée", "rapport à l'appel direct", "dont sérialisation"], lignes);
-}
-
-/* ------------------------------------------------------------------ mesure 4 */
-
-async function prixDunWorker() {
-  const table = section(
-    "4. Que coûte l'existence d'un Worker ?",
-    "Démarrage d'un worker vide, puis d'un worker qui charge réellement le socle par HTTP.",
-  );
-
-  const demarrer = (code, options) =>
-    new Promise((resoudre) => {
-      const t0 = performance.now();
-      const w = creerWorker(code, options);
-      const fin = setTimeout(() => { w.terminate(); resoudre(null); }, 5000);
-      w.onmessage = () => { clearTimeout(fin); w.terminate(); resoudre(performance.now() - t0); };
-      w.onerror = () => { clearTimeout(fin); w.terminate(); resoudre(null); };
-    });
-
-  const mediane = (v) => { const s = v.filter((x) => x !== null).sort((a, b) => a - b);
-    return s.length ? s[Math.floor(s.length / 2)] : null; };
-
-  const vides = [];
-  for (let i = 0; i < 8; i++) vides.push(await demarrer(`self.postMessage(1)`));
-
-  const socle = document.querySelector('script[type="importmap"]');
-  const urlSocle = socle ? JSON.parse(socle.textContent).imports["@socle/bus"] : null;
-  const charges = [];
-  if (urlSocle) {
-    for (let i = 0; i < 8; i++) {
-      charges.push(await demarrer(
-        `import {VERSION} from "${urlSocle}"; self.postMessage(VERSION);`, { type: "module" }));
-    }
-  }
-
-  remplir(table, ["worker", "démarrage médian", "", ""], [
-    ["vide", { texte: `${arrondir(mediane(vides), 1)} ms`, ton: "bon" }, "", ""],
-    [
-      "chargeant le socle par HTTP",
-      charges.length && mediane(charges) !== null
-        ? { texte: `${arrondir(mediane(charges), 1)} ms` }
-        : { texte: "non mesurable", ton: "mauvais" },
-      "", "",
-    ],
-  ]);
-}
-
-/* ------------------------------------------------------------------ mesure 5 */
-
-async function resolutionTraverse() {
-  const table = section(
-    "5. La carte d'import traverse-t-elle la frontière du Worker ?",
-    "C'est la mesure la plus structurante : tout le versionnage de cette maquette repose " +
-      "sur la résolution d'un spécificateur nu par la carte d'import du document.",
-  );
-
-  const essayer = (code, options) =>
-    new Promise((resoudre) => {
-      let w;
-      try { w = creerWorker(code, options); } catch (e) { return resoudre({ ok: false, quoi: e.message }); }
-      const fin = setTimeout(() => { w.terminate(); resoudre({ ok: false, quoi: "délai dépassé" }); }, 4000);
-      w.onmessage = (e) => { clearTimeout(fin); w.terminate(); resoudre({ ok: true, quoi: String(e.data) }); };
-      w.onerror = () => { clearTimeout(fin); w.terminate(); resoudre({ ok: false, quoi: "échec de résolution" }); };
-    });
-
-  const carte = document.querySelector('script[type="importmap"]');
-  const urlSocle = carte ? JSON.parse(carte.textContent).imports["@socle/bus"] : "";
-
-  const absolue = await essayer(
-    `import {VERSION} from "${urlSocle}"; self.postMessage("socle " + VERSION);`, { type: "module" });
-  const nue = await essayer(
-    `import {VERSION} from "@socle/bus"; self.postMessage("socle " + VERSION);`, { type: "module" });
-
-  let dansLaPage;
-  try {
-    const m = await import("@socle/bus");
-    dansLaPage = { ok: true, quoi: `socle ${m.VERSION}` };
-  } catch (e) {
-    dansLaPage = { ok: false, quoi: e.message };
-  }
-
-  const juger = (r) => ({ texte: r.ok ? r.quoi : `échec — ${r.quoi}`, ton: r.ok ? "bon" : "mauvais" });
-
-  remplir(table, ["import tenté", "résultat", "", ""], [
-    ["URL absolue, dans un Worker", juger(absolue), "", ""],
-    ["spécificateur nu « @socle/bus », dans un Worker", juger(nue), "", ""],
-    ["spécificateur nu « @socle/bus », dans la page", juger(dansLaPage), "", ""],
-  ]);
+  remplir(table, ["opération", "durée", "dont sérialisation"], lignes);
 }
 
 /* -------------------------------------------------------------------------- */
 
 /**
  * Garde-fou. Chrome bride les minuteurs d'un onglet masqué à environ un par seconde :
- * toutes les mesures de blocage rendent alors ~1000 ms, y compris la référence, et le
- * tableau devient un piège au lieu d'un instrument.
+ * les durées rendues deviennent alors des multiples du bridage, et le tableau devient
+ * un piège au lieu d'un instrument.
  *
  * On refuse de mesurer plutôt que de produire des chiffres faux. Une mesure silencieuse
  * et fausse coûte plus cher que pas de mesure.
@@ -354,11 +222,8 @@ bouton.addEventListener("click", async () => {
     `${new Date().toLocaleString("fr-FR")}`;
   zone.append(entete);
 
-  await quiProtege();
   await peutOnArreter();
   await prixDuPassage();
-  await prixDunWorker();
-  await resolutionTraverse();
 
   bouton.disabled = false;
   bouton.textContent = "relancer toutes les mesures";

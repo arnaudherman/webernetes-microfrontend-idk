@@ -8,7 +8,7 @@ import type { Trace } from "./bus";
  * d'état, ni durée, ni chaîne d'acheminement, ni réessai — non par paresse, mais
  * parce que rien de tout cela n'existe.
  *
- * Ce journal n'est jamais fusionné avec celui du cluster.
+ * Ce journal n'est jamais fusionné avec le journal collecté de la moitié basse.
  *
  * Une ligne « 0 abonné » n'est pas peinte en rouge. Ce n'est pas une erreur : c'est un
  * fait, et personne dans le système ne le considère comme anormal. Lui donner

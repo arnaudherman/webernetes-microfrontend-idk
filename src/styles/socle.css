@@ -43,14 +43,67 @@
   /* Rythme */
   --pas: 8px;
   /* La barre d'essais est fixe : le reste de la page doit rester lisible au-dessus.
-     Ces trois hauteurs sont liées — journal + frontière + journal doivent tenir dans
-     un écran de 800 px moins la barre, pour que la comparaison des deux journaux se
-     fasse d'un seul coup d'œil. */
-  --hauteur-barre: 168px;
+     Ces hauteurs sont liées — journal + frontière + journal doivent tenir dans un
+     écran de 800 px moins la barre, pour que la comparaison des deux journaux se
+     fasse d'un seul coup d'œil. Le compte est exact et se refait :
+     200 + 124 + 288 = 612 = 800 − 188.
+
+     Mesuré, il tient de 1024 à 1440 px de large : la pile rend 611,96 px. Il a fallu
+     pour cela empêcher le sélecteur de mode de se couper en deux lignes — voir
+     `white-space: nowrap` dans `frontiere.css`, sans quoi ce compte était faux à
+     1280 px, c'est-à-dire à la taille même qu'il invoque. */
+
+  /*
+   * 188 et non 168 : mesuré, la barre demandait 187 px et en avait 168. Les 19 px
+   * de trop débordaient sous le bord de la fenêtre, et comme `body` réserve
+   * exactement `--hauteur-barre` en bas, aucun défilement n'y menait. Le bouton
+   * décapité était l'essai 4 — la moitié de la paire décisive 4/5.
+   */
+  --hauteur-barre: 188px;
+
   --hauteur-journal: 200px;
+
+  /*
+   * Le journal collecté est plus haut que celui du bus, et ce n'est pas une
+   * dissymétrie décorative.
+   *
+   * Les deux partageaient 200 px. Mais l'en-tête du bas porte une légende sur deux
+   * lignes ET le bandeau « Rapporté, non constaté » — 94 px, contre 36 px en haut.
+   * À hauteur égale, le journal du bus offrait sept emplacements pour deux lignes
+   * pendant que le journal collecté en montrait quatre sur vingt-quatre. La page
+   * annonce les deux journaux de part et d'autre de la ligne comme l'argument
+   * visuel principal ; il faut donc qu'ils pèsent le même poids à l'œil, ce qui
+   * demande de compenser l'en-tête, pas de l'ignorer.
+   */
+  --hauteur-journal-bas: 288px;
 
   --duree-courte: 140ms;
   --duree-traversee: 240ms;
+}
+
+/*
+ * La hauteur de la barre dépend de la LARGEUR de la fenêtre, ce qui n'est pas
+ * évident et coûtait un bouton.
+ *
+ * Sous 1200 px, les deux intitulés de groupe passent à deux lignes, puis les
+ * libellés d'essai. Mesuré, la barre demande alors 208 px jusqu'à 1024 et 224 px en
+ * dessous, quand elle en avait 188 : le quatrième bouton se retrouvait recoupé par
+ * le bord de la fenêtre — le même défaut qu'à 168 px, réapparu par un autre chemin.
+ * 224 couvre les deux paliers ; la barre est un fond uni, quelques pixels de marge
+ * ne s'y voient pas, un bouton coupé si.
+ *
+ * La règle porte sur `:root`, pas sur `.barre-essais`, et c'est le point important :
+ * la hauteur de la barre et la réserve de `body` lisent la MÊME variable. Les
+ * découpler ferait grandir une barre fixe devant un `body` qui l'ignore, ce qui est
+ * exactement le défaut d'origine pris par l'autre bout.
+ *
+ * Le compte de 612 ci-dessus ne vaut qu'au-dessus de ce seuil, et c'est assumé :
+ * c'est là qu'est la projection. À 1150 px de large, on n'est pas sur le projecteur.
+ */
+@media (max-width: 1199px) {
+  :root {
+    --hauteur-barre: 224px;
+  }
 }
 
 *,

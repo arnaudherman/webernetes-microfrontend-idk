@@ -2,7 +2,7 @@
  * Moitié haute : l'interface.
  *
  * Traitement graphique volontairement différent de la moitié basse. Ici, pas de
- * cartes encadrées par nœud ni d'adresses IP : des modules alignés sur un rail, et
+ * cartes encadrées par service ni de ports : des modules alignés sur un rail, et
  * un journal qui ne comporte aucune colonne de code d'état — parce qu'il n'y en a pas.
  */
 
@@ -169,26 +169,82 @@
 
 /* Les modules ------------------------------------------------------------------ */
 
+/*
+ * `grid-template-rows` n'est PAS facultatif ici, et son absence coûtait cher.
+ *
+ * Sans lui, la rangée implicite est dimensionnée sur son contenu : `height: 320px`
+ * bornait le conteneur, pas la rangée. Les cartes grandissaient donc jusqu'à 432 px,
+ * débordaient de 112 px avec `overflow: visible`, et le journal du bus — qui suit dans
+ * le flux et porte un fond opaque — se peignait par-dessus.
+ *
+ * Conséquence mesurée : neuf contrôles réels devenaient INCLIQUABLES, dont six cartes
+ * de tâche. `elementFromPoint` sur « S. Rahimi » rendait `ol.journal-lignes`. Six
+ * tâches sur neuf ne pouvaient plus être sélectionnées, ce qui est le geste du 0:00 et
+ * celui du 4:30 du déroulé.
+ *
+ * Chaque fragment déclarait pourtant déjà `height: 100%` et son propre défilement
+ * interne. Ils ne défilaient pas parce que `100%` se résolvait contre une hauteur
+ * elle-même dictée par le contenu. Contraindre la rangée rend leur défilement
+ * opérant : rien n'est masqué, tout redevient atteignable.
+ */
 .modules {
   display: grid;
   grid-template-columns:
     minmax(178px, 0.66fr) minmax(280px, 1.72fr)
     minmax(196px, 1fr) minmax(210px, 1.06fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 12px;
   padding: 0 24px 12px;
-  height: 320px;
+  /*
+   * 344 réglait l'accès à un CONTRÔLE. 468 règle l'accès à une DONNÉE, et c'est un
+   * second problème que le premier chiffre ne voyait pas.
+   *
+   * À 344, le fragment `charge` affichait 100 px de barres pour 223 px de contenu :
+   * un histogramme à trois responsables qui en montrait un. S. Rahimi était hors
+   * champ, A. Mercier coupé en deux. Rien ne le signalait — la carte a l'air pleine.
+   *
+   * Le compte se refait : 2 (bordures) + 109 (en-tête égalisé, voir `.module-tete`)
+   * + 121 (portée et pied du fragment) + 223 (les trois barres) = 455 pour la carte,
+   * plus 12 de marge basse = 468 pour la rangée.
+   *
+   * `tableau` continue de défiler, et c'est assumé : ses neuf tâches demandent 435 px
+   * de colonnes, soit une rangée de 601 px qui passerait sous la barre d'essais à
+   * 800 px de haut. On lui donne 284 px au lieu de 184 — trois tâches entières par
+   * colonne au lieu d'une et demie — et son défilement interne reste le moyen d'aller
+   * voir les autres. La différence avec `charge` est qu'il DIT combien il en a :
+   * « 9 tâches affichées sur 9 » est écrit en tête de carte.
+   */
+  height: 468px;
 }
 
 .module {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  /* Aucune carte ne peint hors de sa bordure. Garde-fou : même si un fragment
+     réintroduisait un contenu trop haut, il ne pourrait plus recouvrir le journal. */
+  overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--trait-fort);
 }
 
+/*
+ * Les quatre en-têtes font la même hauteur, et la carte qui déclare le plus ne paie
+ * plus pour l'avoir déclaré.
+ *
+ * Ils rendaient 85, 85, 85 et 109 px : `charge` consomme deux événements, son contrat
+ * passait à trois lignes, et c'était donc la carte au contenu le plus court qui
+ * portait l'histogramme — celle qui avait le plus besoin de place. La ligne de base
+ * des quatre fragments dansait de 24 px en travers de la rangée.
+ *
+ * `min-height` et non `height` : la valeur couvre trois lignes de contrat, ce qui
+ * suffit aux quatre contrats actuels jusqu'à 1280 px de large. Un cinquième plus
+ * bavard ferait grandir son en-tête au lieu de se faire couper — on égalise le
+ * mobilier, on ne plafonne pas ce qu'un contrat a le droit de dire.
+ */
 .module-tete {
   flex: 0 0 auto;
+  min-height: 109px;
   padding: 5px 10px 6px;
   border-bottom: 1px solid var(--trait);
   background: var(--fond-creux);
@@ -208,6 +264,23 @@
   margin: 3px 0 0;
   display: block;
   line-height: 1.6;
+}
+
+/*
+ * L'espace entre le terme et sa définition était une MARGE, pas un espace.
+ *
+ * `dt` et `dd` sont ajoutés au `dl` sans nœud de texte entre eux : il n'existait donc
+ * aucune occasion de retour à la ligne entre « publie » et son premier jeton. Dans la
+ * colonne la plus étroite, la paire `publie →filtre:change` demandait 199,4 px pour
+ * 198 px disponibles et se faisait rogner par `.module { overflow: hidden }` — le
+ * défaut que le commentaire ci-dessus interdit, dans la carte qui le déclare.
+ *
+ * L'espace de chasse nulle rend la coupure possible entre le terme et sa définition,
+ * et là seulement : `.evenement` reste en `nowrap`, aucun jeton ne se coupe en son
+ * milieu. Ce qui déborde passe à la ligne au lieu de disparaître.
+ */
+.module-contrat dt::after {
+  content: "\200B";
 }
 
 .module-contrat dt {
@@ -231,22 +304,45 @@
   display: block;
 }
 
+/*
+ * Un contrat est une DÉCLARATION, jamais une commande.
+ *
+ * Ces jetons portaient `border: 1px solid currentColor` et l'accent `--nominal` :
+ * c'est-à-dire, au pixel et à la couleur près, la bordure et l'accent des boutons de
+ * filtre situés dans la même colonne, dix pixels plus bas. On essayait de cliquer
+ * dessus. Dans une démonstration dont la thèse est qu'une chose peut ressembler à ce
+ * qu'elle n'est pas, c'était le défaut à l'écran pendant qu'on le dénonce.
+ *
+ * Règle du dispositif, vérifiée par `outils/verifier-affordance.mjs` : UNE BOÎTE
+ * BORDÉE EST UN CONTRÔLE, ET RIEN D'AUTRE NE L'EST.
+ *
+ * Le sens — publié ou consommé — reste porté par trois canaux, dont aucun n'est la
+ * teinte seule : la marque de direction, la graisse, la couleur. Le critère n'est pas
+ * qu'on puisse le déduire en lisant une carte — le mot `publie` est déjà à gauche —
+ * mais qu'on le lise en BALAYANT les quatre cartes, ce que fait une salle pendant
+ * l'essai 4.
+ */
 .evenement {
   display: inline-block;
   font-family: var(--donnee);
   font-size: var(--taille-libelle);
-  border: 1px solid currentColor;
-  padding: 0 4px;
-  margin-right: 3px;
+  margin-right: 11px;
   white-space: nowrap;
+}
+
+.evenement-marque {
+  margin-right: 3px;
+  font-weight: 700;
 }
 
 .evenement-sortant {
   color: var(--nominal);
+  font-weight: 700;
 }
 
 .evenement-entrant {
-  color: var(--encre-douce);
+  color: var(--encre-tenue);
+  font-weight: 400;
 }
 
 .evenement-neant {
@@ -282,8 +378,30 @@
 /* Journal du bus --------------------------------------------------------------
    Il n'y a pas de colonne de code d'état, et ce n'est pas un oubli. */
 
+/*
+ * Mêmes deux cheveux que dans le journal collecté, mêmes conséquences.
+ *
+ * `heure` : 106 px pour 109 px, donc toutes les millisecondes à l'ellipse. C'est sur
+ * elles que se lit la correspondance entre une ligne d'ici et une ligne d'en bas.
+ * Même largeur qu'en bas — 116 px — parce que c'est le même horodatage : deux
+ * colonnes de largeurs différentes de part et d'autre de la ligne se compareraient
+ * moins bien à l'œil.
+ *
+ * `abonnes` : 236 px pour 298 px. On lisait `2 abonnés · mf-tableau, m…` — le compte
+ * survivait, les noms non. Or la question posée par la moitié haute est exactement
+ * QUI écoute : un message parti vers zéro abonné ne produit aucun signal, et c'est la
+ * liste, pas le nombre, qui permet de le constater.
+ *
+ * 312 et non 298 : la plus longue liste possible — `2 abonnés · mf-tableau,
+ * mf-charge` — mesure exactement 298 px. Une colonne qui tient au pixel près ne tient
+ * pas : il suffit d'un nom d'abonné de plus pour retomber dans l'ellipse, en salle,
+ * sans que rien ne prévienne.
+ *
+ * `charge-utile` garde son ellipse : une charge utile JSON est un déversoir, pas une
+ * colonne à lire. C'est la seule des cinq dont on assume la coupure.
+ */
 .journal-bus .ligne {
-  grid-template-columns: 106px 152px 122px 236px minmax(180px, 1fr);
+  grid-template-columns: 116px 152px 122px 312px minmax(180px, 1fr);
 }
 
 .journal-bus .evenement-nom {

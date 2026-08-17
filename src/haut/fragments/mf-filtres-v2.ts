@@ -38,6 +38,11 @@ const STYLE = `
     color: var(--encre-tenue);
   }
   .choix { display: flex; flex-direction: column; gap: 4px; }
+  /* Les responsables en jetons sur une ligne : empiles pleine largeur, ils
+     poussaient la carte 124 px au-dela de sa rangee et le filtre devenait
+     inatteignable sans defiler. */
+  .choix-jetons { flex-direction: row; flex-wrap: wrap; gap: 4px; }
+  .choix-jetons button { padding: 4px 8px; }
   button {
     font-family: var(--libelles); font-size: var(--taille-libelle); font-weight: 600;
     text-align: left; padding: 5px 9px; cursor: pointer;
@@ -98,6 +103,7 @@ export class MfFiltresV2 extends HTMLElement {
     options: readonly { valeur: string; libelle: string }[],
     courant: string,
     choisir: (valeur: string) => void,
+    disposition: "colonne" | "jetons" = "colonne",
   ): HTMLElement {
     const bloc = document.createElement("div");
     bloc.className = "groupe";
@@ -107,7 +113,7 @@ export class MfFiltresV2 extends HTMLElement {
     intitule.id = `titre-${titre}`;
 
     const choix = document.createElement("div");
-    choix.className = "choix";
+    choix.className = disposition === "jetons" ? "choix choix-jetons" : "choix";
     choix.setAttribute("role", "group");
     choix.setAttribute("aria-labelledby", intitule.id);
 
@@ -136,7 +142,7 @@ export class MfFiltresV2 extends HTMLElement {
       style,
       this.#groupe("statut", STATUTS, this.#statut, (valeur) => {
         this.#statut = valeur;
-      }),
+      }, "jetons"),
       this.#groupe(
         "responsable",
         [
@@ -147,6 +153,7 @@ export class MfFiltresV2 extends HTMLElement {
         (valeur) => {
           this.#responsable = valeur;
         },
+        "jetons",
       ),
     );
   }

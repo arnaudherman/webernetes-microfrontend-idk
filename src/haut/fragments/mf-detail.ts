@@ -5,7 +5,7 @@ import type { Contrat } from "../contrat";
  * Fragment « détail ».
  *
  * Il ne publie rien et ne consomme qu'un seul événement. C'est le fragment le plus
- * simple du lot, et c'est pour cela qu'il sert aux essais 3 et 4 : le démonter ne
+ * simple du lot, et c'est pour cela qu'il sert aux essais 6 et 7 : le démonter ne
  * casse rien, et le remonter le fait repartir vide.
  *
  * Il ne conserve aucun état hors du document. Quand il revient, il ne sait rien de ce

@@ -16,12 +16,39 @@ export interface Cadre {
   marquerMonte(): void;
 }
 
-function jeton(classe: string, texte: string): HTMLElement {
+/**
+ * Un jeton de contrat.
+ *
+ * La marque de direction est du DOM, pas un `::before` : elle doit survivre à une
+ * copie et à une capture d'écran. Elle est masquée aux lecteurs d'écran parce que
+ * le terme `publie` ou `consomme` est déjà juste à gauche — pour qui lit
+ * linéairement, la flèche ne dit rien de neuf ; pour qui balaie quatre cartes des
+ * yeux, elle dit tout.
+ */
+function jeton(classe: string, texte: string, marque?: string): HTMLElement {
   const element = document.createElement("span");
   element.className = classe;
-  element.textContent = texte;
+
+  if (marque) {
+    const fleche = document.createElement("span");
+    fleche.className = "evenement-marque";
+    fleche.setAttribute("aria-hidden", "true");
+    fleche.textContent = marque;
+    element.append(fleche);
+  }
+
+  element.append(document.createTextNode(texte));
   return element;
 }
+
+/**
+ * `←` pour ce qui entre, `→` pour ce qui sort.
+ *
+ * Ce n'est pas une convention inventée ici : le journal du bus écrit déjà
+ * `← mf-filtres` pour désigner la provenance d'un message. La salle a donc déjà vu
+ * ce signe avec ce sens avant d'arriver sur les cartes.
+ */
+const MARQUE: Record<string, string> = { sortant: "→", entrant: "←" };
 
 export function creerCadre(cle: string): Cadre {
   const racine = document.createElement("section");
@@ -52,7 +79,7 @@ export function creerCadre(cle: string): Cadre {
       definition.append(jeton("evenement-neant", "rien"));
     } else {
       for (const evenement of evenements) {
-        definition.append(jeton(`evenement evenement-${sens}`, evenement));
+        definition.append(jeton(`evenement evenement-${sens}`, evenement, MARQUE[sens]));
       }
     }
     return [terme, definition];

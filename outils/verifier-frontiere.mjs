@@ -20,10 +20,17 @@ import { fileURLToPath } from "node:url";
 const RACINE = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const SRC = join(RACINE, "src");
 
-/** Modules autorises a connaitre les deux moities. */
+/**
+ * Modules autorises a connaitre les deux moities.
+ *
+ * `frontiere/traversee.ts` s'appelait `frontiere/passerelle.ts`. Le mot « passerelle »
+ * designe maintenant le PROCESSUS qui tourne sur 127.0.0.1:7200 et prend trois
+ * decisions ; ce module-la, lui, ne decide rien, il fait franchir. Deux choses du meme
+ * nom dans une etude d'architecture, c'est une ambiguite qui se paie en reunion.
+ */
 const ORCHESTRATION = new Set([
   "main.ts",
-  "frontiere/passerelle.ts",
+  "frontiere/traversee.ts",
   "essais/barre-essais.ts",
   "synthese/compteurs.ts",
   "synthese/panneau.ts",
@@ -78,7 +85,7 @@ for (const absolu of fichiers) {
     zonesVues.add(zoneCible);
 
     if (zoneSource === "haut" && zoneCible === "bas") {
-      violations.push(`${fichier} importe ${cible} : la moitie haute ne doit pas connaitre le cluster.`);
+      violations.push(`${fichier} importe ${cible} : la moitie haute ne doit pas connaitre les services.`);
     }
     if (zoneSource === "bas" && zoneCible === "haut") {
       violations.push(`${fichier} importe ${cible} : la moitie basse ne doit pas connaitre l'interface.`);

@@ -82,6 +82,14 @@ export class MfTableauV2 extends HTMLElement {
   readonly #racine: ShadowRoot;
   #desabonnements: Desabonnement[] = [];
   #taches: TacheAttendue[] = [];
+
+  /**
+   * Même distinction que dans `mf-tableau` : « rien reçu » n'est pas « zéro reçu ».
+   * Cette implémentation de remplacement doit tenir le même contrat de véracité que
+   * celle qu'elle remplace, sans quoi l'essai 8 échangerait un fragment honnête
+   * contre un fragment qui invente un décompte.
+   */
+  #recu = false;
   #filtre: FiltreAttendu = {};
   #selection: string | undefined;
 
@@ -97,6 +105,7 @@ export class MfTableauV2 extends HTMLElement {
         bus.abonner("donnees:chargees", "mf-tableau", (charge) => {
           const recu = charge as { taches?: TacheAttendue[] } | undefined;
           this.#taches = recu?.taches ?? [];
+          this.#recu = true;
           this.#rendre();
         }),
         bus.abonner("filtre:change", "mf-tableau", (charge) => {
@@ -155,6 +164,16 @@ export class MfTableauV2 extends HTMLElement {
   #rendre(): void {
     const style = document.createElement("style");
     style.textContent = STYLE;
+
+    if (!this.#recu) {
+      const attente = document.createElement("p");
+      attente.className = "vide";
+      attente.textContent =
+        "Aucune donnée reçue. Ce fragment attend un donnees:chargees et n'a rien à compter " +
+        "tant qu'il ne l'a pas obtenu.";
+      this.#racine.replaceChildren(style, attente);
+      return;
+    }
 
     const affichees = this.#filtrees();
 

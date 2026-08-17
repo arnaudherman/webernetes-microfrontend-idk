@@ -16,21 +16,24 @@ import "./haut/fragments/mf-detail";
 import "./haut/fragments/mf-charge";
 
 import { installerGardeReseau } from "./garde-reseau";
-import { arreterCluster, demarrerCluster } from "./bas/cluster";
-import { brancherEtatPods, brancherTrafic } from "./bas/etat-pods";
-import { brancherEcouteursReseau, brancherEvenements } from "./bas/journal-cluster";
+import { demarrerFluxConsole } from "./bas/flux-console";
 import { rendreMoitieBasse } from "./bas/rendu";
 import { creerBus } from "./haut/bus";
 import { rendreJournalBus, tracer } from "./haut/journal-bus";
 import { rendreRail, type Rail } from "./haut/rail";
 import { Shell } from "./haut/shell";
-import { attendreCluster, chargerDonnees, observerSource } from "./frontiere/passerelle";
+import {
+  attendreServices,
+  chargerDonnees,
+  observerMode,
+  observerSource,
+} from "./frontiere/traversee";
 import { rendreFrontiere } from "./frontiere/vue-frontiere";
 import { rendreBarreEssais } from "./essais/barre-essais";
 import { rendreSynthese } from "./synthese/panneau";
 
-// Avant toute chose, et avant la construction du moindre cluster : la page
-// s'interdit d'émettre hors de sa propre origine.
+// Avant toute chose, et avant le moindre appel : la page se limite aux quatre
+// origines déclarées, toutes sur 127.0.0.1.
 installerGardeReseau();
 
 const application = document.querySelector<HTMLElement>("#application");
@@ -58,7 +61,7 @@ application.innerHTML = `
     <div id="frontiere"></div>
 
     <section class="bande bande-basse">
-      <div class="journal journal-cluster" id="journal-cluster"></div>
+      <div class="journal journal-collecte" id="journal-collecte"></div>
       <div class="topologie" id="topologie"></div>
     </section>
 
@@ -108,7 +111,17 @@ const detacherSource = observerSource((etat) => {
   libelle.textContent = etat.detail ? `${etat.libelle} · ${etat.detail}` : etat.libelle;
   zoneSource.append(libelle);
 
-  if (etat.phase === "erreur") {
+  // L'identifiant de corrélation est affiché à côté de l'appel qui l'a produit. Sans
+  // `Access-Control-Expose-Headers` côté service, il traverserait le réseau et serait
+  // invisible ici : la corrélation serait réelle et indémontrable.
+  if (etat.correlation) {
+    const id = document.createElement("code");
+    id.className = "source-correlation donnee";
+    id.textContent = `id=${etat.correlation}`;
+    zoneSource.append(id);
+  }
+
+  if (etat.phase === "erreur" || etat.phase === "degrade") {
     const reessai = document.createElement("button");
     reessai.type = "button";
     reessai.className = "bouton-reessai";
@@ -118,12 +131,24 @@ const detacherSource = observerSource((etat) => {
   }
 });
 
+// Changer de mode change la position de la frontière : on recharge les données pour
+// que l'écran affiche ce que ce mode-là produit, sans recharger la page — les
+// compteurs de session sont ce qui rend la comparaison lisible.
+let premierMode = true;
+const detacherModeChargement = observerMode(() => {
+  if (premierMode) {
+    premierMode = false;
+    return;
+  }
+  void chargerDonnees(bus);
+});
+
 const detacherFrontiere = rendreFrontiere(document.querySelector<HTMLElement>("#frontiere")!);
 
 /* ---------------------------------------------------------------- moitié basse */
 
 const detacherRendu = rendreMoitieBasse(
-  document.querySelector<HTMLElement>("#journal-cluster")!,
+  document.querySelector<HTMLElement>("#journal-collecte")!,
   document.querySelector<HTMLElement>("#topologie")!,
 );
 
@@ -143,24 +168,17 @@ const detacherBarre = rendreBarreEssais(document.querySelector<HTMLElement>("#ba
   rail,
 });
 
-let detacherReseau: (() => void) | undefined;
-let detacherTrafic: (() => void) | undefined;
-let informateurPods: { stop: () => Promise<void> } | undefined;
-let informateurEvenements: { stop: () => Promise<void> } | undefined;
+/**
+ * Le flux de la console est ouvert AVANT le premier chargement de données.
+ *
+ * L'ordre compte pour la démonstration : la toute première traversée doit apparaître
+ * dans le journal collecté. Si le flux s'ouvrait après, la ligne fondatrice manquerait
+ * et l'écran s'ouvrirait sur un journal qui a déjà oublié quelque chose.
+ */
+const detacherFlux = demarrerFluxConsole();
 
 async function demarrer(): Promise<void> {
-  await demarrerCluster({
-    avantInit: (cluster) => {
-      detacherReseau = brancherEcouteursReseau(cluster);
-      detacherTrafic = brancherTrafic(cluster);
-    },
-    apresInit: (cluster) => {
-      informateurPods = brancherEtatPods(cluster);
-      informateurEvenements = brancherEvenements(cluster);
-    },
-  });
-
-  await attendreCluster();
+  await attendreServices();
   await chargerDonnees(bus);
 }
 
@@ -172,13 +190,10 @@ import.meta.hot?.dispose(() => {
   detacherBarre();
   synthese.detacher();
   detacherSource();
+  detacherModeChargement();
   detacherJournalBus();
   rail?.detacher();
   detacherRendu();
   detacherFrontiere();
-  detacherReseau?.();
-  detacherTrafic?.();
-  void informateurPods?.stop();
-  void informateurEvenements?.stop();
-  void arreterCluster();
+  detacherFlux();
 });

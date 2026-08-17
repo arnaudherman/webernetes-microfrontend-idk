@@ -99,19 +99,76 @@ etape("invariant de frontière", () => {
     : { ok: false, detail: resultat.detail };
 });
 
+/**
+ * Une boîte bordée est un contrôle, et rien d'autre ne l'est.
+ *
+ * Les jetons de contrat portaient la bordure et l'accent des boutons de filtre placés
+ * dans la même colonne : on essayait de cliquer dessus. À l'inverse, le `summary` de
+ * la synthèse se cliquait sans le moindre signe visible. Aucun typecheck ne voit ça,
+ * et une démonstration dont la thèse est qu'une chose peut ressembler à ce qu'elle
+ * n'est pas ne peut pas se le permettre.
+ */
+etape("affordance : rien ne ment sur ce qu'il est", () => {
+  const resultat = commande("node", ["outils/verifier-affordance.mjs"]);
+  return resultat.ok && resultat.sortie.includes("Affordance respectee")
+    ? { ok: true }
+    : { ok: false, detail: resultat.detail };
+});
+
 etape("build de production", () => commande("npx", ["vite", "build", "--logLevel", "warn"]));
 
-etape("artefact produit", () => {
+/**
+ * Cette étape vérifiait que l'artefact pesait AU MOINS 400 ko.
+ *
+ * C'était une assertion sur un poids, et elle mesurait en réalité la présence de
+ * Webernetes — 525 ko à elle seule. Le paquet est sorti du code : il est redevenu
+ * une source citée, et la moitié basse tourne dans quatre vrais processus. Un seuil
+ * de taille ne dit plus rien de vrai, et le relever ou l'abaisser reviendrait à
+ * vérifier que le code n'a pas maigri, ce dont personne n'a besoin.
+ *
+ * On vérifie donc la DÉCISION plutôt que le poids : un seul artefact, et aucune
+ * trace de Webernetes dedans. Si quelqu'un le réintroduit, cette étape échoue — ce
+ * qu'un seuil de taille n'aurait pas fait.
+ */
+etape("artefact produit, sans Webernetes", () => {
   const resultat = commande("node", [
     "-e",
-    "const {readdirSync,statSync}=require('node:fs');" +
+    "const {readdirSync,statSync,readFileSync}=require('node:fs');" +
       "const d='dist/assets';const f=readdirSync(d).filter(n=>n.endsWith('.js'));" +
       "if(f.length!==1)throw new Error('attendu 1 fichier .js, trouvé '+f.length);" +
-      "const t=statSync(d+'/'+f[0]).size;if(t<400000)throw new Error('artefact suspect: '+t);" +
+      "const p=d+'/'+f[0];const t=statSync(p).size;" +
+      "if(t<10000)throw new Error('artefact suspect, trop petit: '+t);" +
+      "if(readFileSync(p,'utf8').includes('webernetes'))" +
+      "throw new Error('Webernetes est de retour dans l\\'artefact');" +
       "console.log(t)",
   ]);
   if (!resultat.ok) return resultat;
-  console.log(`         │ un seul artefact JavaScript, ${resultat.sortie.trim()} octets`);
+  console.log(`         │ un seul artefact JavaScript, ${resultat.sortie.trim()} octets, sans Webernetes`);
+  return { ok: true };
+});
+
+/* ------------------------------------------------------------ moitié basse réelle */
+
+titre("Moitié basse — quatre processus");
+
+etape("typecheck des services", () =>
+  commande("npx", ["tsc", "--noEmit", "-p", "src/bas/services/tsconfig.json"]),
+);
+
+/**
+ * Les quatre essais du bas reposent tous sur la passerelle. Si elle cessait de
+ * décider — si quelqu'un la réduisait à un relais d'octets — les essais
+ * continueraient de produire quelque chose, et ce quelque chose ne serait plus la
+ * démonstration. C'est déjà arrivé une fois, ailleurs dans ce dépôt.
+ *
+ * On lance donc les quatre processus et on joue les trois décisions pour de vrai.
+ */
+etape("les trois décisions de la passerelle, jouées", () => {
+  const resultat = commande("node", ["outils/eprouver-passerelle.mjs"]);
+  if (!resultat.ok) return resultat;
+  for (const ligne of resultat.sortie.trim().split("\n")) {
+    console.log(`         │ ${ligne}`);
+  }
   return { ok: true };
 });
 
@@ -349,7 +406,8 @@ const total = Math.round(Number(process.hrtime.bigint() - debutTotal) / 1e6);
 
 if (echecs === 0) {
   console.log(`\nRecette complète en ${total} ms. Tout marche.\n`);
-  console.log("  npm run dev                                    → http://localhost:5173/");
+  // `npm run demo`, pas `npm run dev` : la page seule ne joint pas ses services.
+  console.log("  npm run demo                                   → http://localhost:5173/");
   console.log("  cd maquette-independance && node servir.mjs     → http://localhost:5100/\n");
   process.exit(0);
 }

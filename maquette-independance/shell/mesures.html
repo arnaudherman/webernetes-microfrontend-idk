@@ -22,9 +22,11 @@
   <body>
     <h1>Mesures — le prix des frontières du navigateur</h1>
     <p class="sous-titre">
-      Chaque chiffre cité dans les notes de cette étude est reproductible ici, sur votre
-      machine et votre navigateur. Rien n'est codé en dur : tout est mesuré au moment où
-      vous cliquez. Comptez une vingtaine de secondes.
+      Deux mesures, rejouables sur votre machine et votre navigateur : si
+      <code>terminate()</code> interrompt vraiment un Worker qui ne coopère pas, et ce que
+      coûte un aller-retour vers un Worker selon la taille de la charge utile, part de
+      sérialisation isolée. Rien n'est codé en dur : tout est mesuré au moment où vous
+      cliquez. Comptez quelques secondes.
     </p>
 
     <div class="essais">
@@ -36,8 +38,14 @@
     <p class="avertissement">
       <strong>Ce que ces mesures ne disent pas.</strong> Une seule série, un seul
       navigateur, une seule machine, sans charge concurrente. Elles donnent des ordres de
-      grandeur et des rapports, pas des valeurs opposables. Les blocages sont mesurés par
-      échantillonnage à 16 ms : la résolution est de cet ordre.
+      grandeur, pas des valeurs opposables.
+    </p>
+
+    <p class="avertissement">
+      <strong>Cette page en portait cinq.</strong> Trois ont été retirées, avec le code qui
+      les produisait — l'isolation Worker contre iframe, le coût de démarrage d'un Worker,
+      et la traversée de la carte d'import. Motif : ces trois mesures ne distinguent pas un
+      résultat négatif d'un test qui n'a pas eu lieu.
     </p>
 
     <script type="module" src="./mesures.js"></script>

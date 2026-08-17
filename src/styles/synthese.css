@@ -10,14 +10,53 @@
   background: var(--surface);
 }
 
+/*
+ * Le défaut inverse de celui des jetons de contrat, et il était là depuis le début :
+ * cette barre EST cliquable et n'en avait aucun signe. `list-style: none` avait
+ * supprimé le triangle natif du `summary` sans rien mettre à la place ; il ne restait
+ * qu'un `cursor: pointer`, qui ne se voit pas en projection et pas du tout à l'arrêt.
+ *
+ * Même règle, dans l'autre sens : ce qui agit doit se voir. On rend donc le marqueur
+ * d'ouverture, et la barre reçoit le traitement d'un contrôle.
+ */
 .synthese-resume {
-  padding: 12px 24px;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 11px 24px;
   cursor: pointer;
   font-family: var(--libelles);
   font-size: var(--taille-corps);
   font-weight: 700;
   letter-spacing: 0.03em;
   list-style: none;
+  background: var(--fond-creux);
+  border: 1px solid var(--trait-fort);
+}
+
+/* Le `summary` de WebKit garde son marqueur par cette pseudo-classe, pas par
+   `list-style` : sans cette ligne, le triangle natif revient EN PLUS du nôtre. */
+.synthese-resume::-webkit-details-marker {
+  display: none;
+}
+
+.synthese-resume::before {
+  content: "▸";
+  font-size: 0.9em;
+  color: var(--nominal);
+}
+
+.synthese[open] .synthese-resume::before {
+  content: "▾";
+}
+
+.synthese-resume:hover {
+  border-color: var(--encre-douce);
+}
+
+.synthese-resume:focus-visible {
+  outline: 3px solid var(--nominal);
+  outline-offset: 2px;
 }
 
 .synthese-resume::-webkit-details-marker {
@@ -128,11 +167,25 @@
   width: 48%;
 }
 
-.comparaison tbody tr:nth-child(1) .colonne-haut,
-.comparaison tbody tr:nth-child(2) .colonne-haut,
-.comparaison tbody tr:nth-child(3) .colonne-haut {
+/* Les quatre premières lignes opposent un signal à une absence de signal : la
+   colonne de droite y est peinte en panne. Le tableau d'écart, lui, se lit
+   autrement — c'est sa DERNIÈRE ligne qui porte le verdict — d'où l'exclusion. */
+.comparaison:not(.comparaison-ecart) tbody tr:nth-child(-n + 4) .colonne-haut {
   color: var(--panne);
   font-weight: 600;
+}
+
+/* « dont la cause a pu être nommée » : via la passerelle ce chiffre égale le nombre
+   d'échecs, en appels directs il reste à zéro quoi qu'on fasse. C'est la ligne qui
+   porte l'étude, et c'est la seule à colorer. */
+.comparaison-ecart tbody tr:last-child .colonne-bas {
+  color: var(--nominal);
+  font-weight: 700;
+}
+
+.comparaison-ecart tbody tr:last-child .colonne-haut {
+  color: var(--panne);
+  font-weight: 700;
 }
 
 /* Conclusion ---------------------------------------------------------------- */
@@ -150,4 +203,23 @@
   padding-left: 18px;
   border-left: 3px solid var(--trait-fort);
   line-height: 1.5;
+}
+
+/* L'écart entre les deux positions de la frontière ---------------------------- */
+
+/* C'est le livrable de cette version du dispositif : les deux modes servent le même
+   écran, et leur différence n'apparaît qu'en panne. Le tableau la chiffre. */
+.ecart {
+  margin-top: 26px;
+}
+
+.ecart > .titre-zone {
+  margin-bottom: 10px;
+}
+
+.ecart-note {
+  margin: 10px 0 0;
+  color: var(--encre-tenue);
+  font-size: var(--taille-libelle);
+  max-width: 74ch;
 }

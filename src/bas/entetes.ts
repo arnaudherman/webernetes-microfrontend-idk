@@ -1,39 +1,26 @@
-import { healthCheckHeader } from "@ngrok/webernetes";
-import type { HttpHeader, HttpRequest } from "@ngrok/webernetes";
-
 /**
- * Aides sur les en-têtes HTTP simulés.
+ * Les en-têtes que la moitié basse pose, et que le navigateur relit.
  *
- * Deux pièges vérifiés dans le paquet :
- *  - les valeurs d'en-tête sont des TABLEAUX de chaînes, jamais des chaînes ;
- *  - la casse des noms est préservée telle que fournie, il faut donc comparer
- *    sans tenir compte de la casse.
+ * Ils sont trois, et il faut bien voir que le troisième existe uniquement pour que
+ * le premier soit visible :
+ *
+ *   X-Correlation-Id   posé par la passerelle, propagé aux deux amonts, rendu au
+ *                      client. C'est le premier des trois devoirs de la passerelle.
+ *   X-Degradation      nomme la partie manquante quand la réponse est partielle.
+ *   Access-Control-Expose-Headers   sans lui, les deux précédents traversent le
+ *                      réseau et restent INVISIBLES dans la page : CORS masque par
+ *                      défaut tout en-tête de réponse non explicitement exposé.
+ *
+ * Le piège du troisième mérite d'être connu : la corrélation aurait parfaitement
+ * fonctionné, aurait été journalisée côté serveur, et n'aurait jamais pu être
+ * affichée à côté de l'appel qui l'a produite. Une propriété réelle et
+ * indémontrable, ce qui pour une démonstration revient à ne pas l'avoir.
  */
 
-/**
- * Identifiant de corrélation posé par le réseau simulé sur chaque requête.
- * La constante existe dans le paquet (`src/cluster/cni/network.ts`) mais n'est pas
- * exportée : elle est recopiée ici. Le fournir soi-même dans une requête lève.
- */
-export const IDENTIFIANT_REQUETE = "X-Webernetes-Request-Id";
+export const EN_TETE_CORRELATION = "X-Correlation-Id";
+export const EN_TETE_DEGRADATION = "X-Degradation";
 
-export function entete(entetes: HttpHeader | undefined, nom: string): string | undefined {
-  if (!entetes) return undefined;
-  const recherche = nom.toLowerCase();
-  for (const [cle, valeurs] of Object.entries(entetes)) {
-    if (cle.toLowerCase() === recherche) return valeurs[0];
-  }
-  return undefined;
-}
-
-/**
- * Vrai pour le trafic des sondes du kubelet, qui représente environ 35 % des
- * requêtes du cluster. Sans ce filtre, le journal est illisible.
- */
-export function estSonde(requete: HttpRequest): boolean {
-  return entete(requete.header, healthCheckHeader) !== undefined;
-}
-
-export function identifiant(requete: HttpRequest): string | undefined {
-  return entete(requete.header, IDENTIFIANT_REQUETE);
+/** Lecture insensible à la casse : `Headers` normalise, mais les journaux, non. */
+export function entete(entetes: Headers, nom: string): string | undefined {
+  return entetes.get(nom) ?? undefined;
 }

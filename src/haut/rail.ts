@@ -9,13 +9,17 @@ import type { Shell } from "./shell";
  * abonné parcourt le rail jusqu'au bout et se dissipe : pas d'erreur, pas de rebond,
  * pas de trace. C'est exactement ce qui se passe dans le bus.
  *
- * Le traitement graphique est volontairement différent de la vue des pods : ici pas
- * de cartes ni d'adresses, une simple ligne et des points en mouvement.
+ * Le traitement graphique est volontairement différent de la vue des services : ici
+ * pas de cartes ni d'adresses, une simple ligne et des points en mouvement.
  *
  * L'identifiant d'abonné choisi par un fragment (`mf-tableau`) et la clé
  * d'emplacement connue du shell (`tableau`) sont reliés par une convention de nommage
  * que rien ne vérifie. C'est un contrat de plus, non typé, tenu par personne — le
  * même genre exactement que celui que l'essai 5 met en défaut.
+ *
+ * Ce module ne sait PAS dans quel mode tourne la frontière, et ne doit pas le savoir :
+ * `src/haut` n'a pas une ligne de différence entre les deux positions. L'étiquette
+ * d'entrée nomme donc la frontière, jamais ce qu'il y a derrière.
  */
 
 const DUREE_MS = 650;
@@ -43,7 +47,7 @@ export function rendreRail(hote: HTMLElement, shell: Shell, ordre: readonly stri
 
   const entree = document.createElement("span");
   entree.className = "rail-entree";
-  entree.textContent = "← passerelle";
+  entree.textContent = "← la frontière";
 
   hote.append(piste, entree, legende);
 
@@ -119,7 +123,17 @@ export function rendreRail(hote: HTMLElement, shell: Shell, ordre: readonly stri
     surTrace(trace) {
       repositionner();
 
-      const cleSource = trace.source === "passerelle" ? undefined : cleDepuisAbonne(trace.source);
+      // Une source qui ne correspond à aucune station vient de l'extérieur du bus :
+      // elle est entrée par la frontière, et son impulsion part du bord gauche.
+      //
+      // Cette ligne testait un nom en dur — `trace.source === "passerelle"` — alors
+      // que la source publiée s'appelait déjà autrement. La branche était morte et le
+      // rendu juste par accident. C'est le mécanisme de l'essai 5 survenu ici même :
+      // un champ renommé, un consommateur silencieux, une sortie plausible. On
+      // interroge donc les stations réellement présentes, pas une chaîne écrite à la
+      // main : renommer la source ne peut plus casser ce rail en silence.
+      const cle = cleDepuisAbonne(trace.source);
+      const cleSource = stations.has(cle) ? cle : undefined;
       const depart = cleSource ? (abscisses.get(cleSource) ?? 0) : 0;
       marquer(cleSource, "source");
 

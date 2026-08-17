@@ -1,16 +1,31 @@
+import { ORIGINES_AUTORISEES } from "./bas/adresses";
+
 /**
  * Garde-reseau.
  *
- * Webernetes route les noms qu'il connait a l'interieur du cluster simule. Un nom
- * qu'il ne resout pas n'echoue pas : il est traite comme une cible externe et part
- * dans le `fetch` du navigateur (src/cluster/cni/network.ts:1009 du paquet). Une
- * faute de frappe sur un nom de Service suffit donc a produire une vraie requete
- * sortante. Aucune option de `ClusterOptions` ne desactive ce repli.
+ * ─────────────────────────────────────────────────────────────────────────────
+ * CE QU'IL PROUVAIT, ET CE QU'IL PROUVE MAINTENANT
+ * ─────────────────────────────────────────────────────────────────────────────
  *
- * La demonstration doit tourner en salle de reunion sans connexion, et doit pouvoir
- * prouver a l'ecran qu'elle n'emet rien. On remplace donc `globalThis.fetch` par une
- * garde qui rejette tout ce qui ne vise pas la meme origine, avant de construire le
- * moindre cluster.
+ * Il prouvait que la page n'emettait AUCUNE requete : tout tournait dans l'onglet, et
+ * la garde refusait tout ce qui n'etait pas la meme origine. Cette affirmation est
+ * morte avec la simulation, et il aurait ete malhonnete de la laisser.
+ *
+ * Ce qu'il prouve desormais est plus precis, et se verifie a l'ecran :
+ *
+ *   1. la page ne contacte QUE les quatre origines declarees dans `bas/adresses.json` —
+ *      console 7100, taches 7101, charges 7102, passerelle 7200 ;
+ *   2. ces quatre origines sont sur 127.0.0.1, donc RIEN NE SORT DE LA MACHINE. La
+ *      demonstration tourne en salle de reunion sans connexion, comme avant ;
+ *   3. tout le trafic de la page passe par un point unique et compte. C'est pour tenir
+ *      cette troisieme propriete que le journal collecte est lu avec `fetch` plutot
+ *      qu'avec `EventSource`, qui aurait echappe a la garde.
+ *
+ * Et il garde son utilite d'origine, deplacee : une faute de frappe sur un port
+ * n'envoie plus une requete au hasard, elle est refusee et comptee. Le compteur de
+ * la synthese affiche ces refus. S'il bouge, c'est qu'un module s'adresse a quelque
+ * chose qui n'est pas declare — ce qui est exactement le genre de derive qu'un
+ * dispositif de demonstration doit rendre impossible a ignorer.
  */
 
 const MARQUEUR = Symbol.for("frontiere.garde-reseau");
@@ -59,11 +74,14 @@ export function installerGardeReseau(): void {
       throw new TypeError(`garde-reseau : URL illisible ${JSON.stringify(brute)}`);
     }
 
-    const memeOrigine =
+    // L'origine de la page elle-meme reste autorisee : c'est Vite qui sert les modules
+    // et son canal de rechargement a chaud.
+    const autorisee =
       destination.origin === globalThis.location.origin ||
+      ORIGINES_AUTORISEES.includes(destination.origin) ||
       PROTOCOLES_SANS_RESEAU.has(destination.protocol);
 
-    if (!memeOrigine) {
+    if (!autorisee) {
       bloquees.push({
         horodatage: Date.now(),
         url: destination.href,
@@ -71,7 +89,7 @@ export function installerGardeReseau(): void {
       });
       throw new TypeError(
         `garde-reseau : sortie refusee vers ${destination.origin}. ` +
-          `La demonstration n'emet aucune requete hors de son propre onglet.`,
+          `La page ne s'adresse qu'aux quatre services declares, tous sur 127.0.0.1.`,
       );
     }
 

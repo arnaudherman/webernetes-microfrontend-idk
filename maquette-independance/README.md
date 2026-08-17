@@ -39,6 +39,11 @@ contrats au sens organisationnel. Les artefacts sont servis depuis le même disq
 par le même processus ; le nombre de processus n'a aucune importance pour ce qui est
 démontré, mais il ne faut pas laisser croire l'inverse.
 
+Et surtout : **un dépôt unique, une équipe unique, aucune livraison indépendante — rien
+n'est donc établi du modèle organisationnel.** Cette maquette sépare des artefacts et des
+origines, pas des équipes. Le modèle organisationnel est hors du périmètre de l'étude, et
+elle ne l'atteint pas davantage que la démonstration principale.
+
 ## Les deux mécanismes qu'il a fallu écrire soi-même
 
 Ce sont les plus instructifs de la maquette, parce qu'ils chiffrent ce que « à construire
@@ -260,6 +265,23 @@ socle ne diffèrent ici que par leur numéro, et cela suffit.
 Les quatre premières lignes sont gratuites et durables. Les six suivantes sont le vrai
 coût du modèle, et aucune n'est fournie par le navigateur.
 
+### La portée de la carte d'import s'arrête au document
+
+Tout le versionnage de cette maquette repose sur la résolution d'un spécificateur nu par
+la carte d'import. Cette résolution a une portée, et cette portée est un fait de
+spécification — elle n'est pas établie ici par une mesure :
+
+> une carte d'import appartient au document ; un worker de type module a sa propre table
+> de résolution et n'en hérite pas.
+
+*Référence : spécification HTML du WHATWG, section « Import maps ».*
+
+Conséquence directe, et elle est structurante : un fragment déplacé dans un Worker
+sortirait du versionnage. Il ne pourrait plus résoudre `@socle/bus`, et l'URL du socle
+devrait lui être écrite en dur ou transmise à la construction — c'est-à-dire exactement ce
+que la carte d'import sert à éviter. L'isolation par Worker et le versionnage par carte
+d'import ne se composent donc pas gratuitement.
+
 ## La vérification de forme — et la question qui décide de tout
 
 `socle/v3/contrats.js` déclare la forme attendue de chaque événement contractualisé, et
@@ -318,44 +340,50 @@ limite d'outillage, c'est une décision de modélisation.
 
 ## L'équipe calcul — l'indépendance de langage, et son prix
 
-Une cinquième équipe écrit sa logique en Rust, compilée en WebAssembly. Le fragment
-expose la même agrégation trois fois. Mesuré dans Chrome 151, sur 100 000 tâches :
+Une cinquième équipe écrit sa logique en Rust, compilée en WebAssembly. Le fragment monte
+dans la page comme les autres, expose le même contrat, et son agrégation est exposée sous
+plusieurs formes d'appel : avec du JSON à l'aller et au retour, et avec des tableaux
+typés.
 
-| | |
-|---|---|
-| JavaScript, sans franchir de frontière | 2,34 ms |
-| Rust, avec du JSON à l'aller et au retour | 33,46 ms |
-| Rust, avec des tableaux typés | **0,240 ms** |
+Ce que cette équipe établit :
 
-**Un facteur 140 entre deux appels au même code Rust**, selon la seule forme des données
-qu'on fait traverser la frontière. L'approche naïve est plus lente que de ne pas franchir
-la frontière du tout : un choix de langage fait pour la performance, associé à du JSON,
-produit un système plus lent que s'il n'avait rien été fait.
-
-C'est la thèse du dépôt transposée d'un cran : **le prix d'une frontière ne tient pas au
-langage, il tient à ce qu'on lui fait traverser.**
-
-Coût d'entrée mesuré : **37,4 ko gzip** — binaire wasm 32,3, glu wasm-bindgen 2,6,
-fragment 2,5. Le « hello world » Rust en pesait 14,7 : `serde` et `serde_json` doublent
-la charge. Il faut télécharger 37 ko pour gagner 2 ms sur 100 000 éléments ; l'arbitrage
-doit être explicite.
+- **L'indépendance de langage est réelle.** Un fragment écrit dans un autre langage,
+  compilé séparément, monte dans le même document et parle le même contrat.
+- **Le prix d'une frontière ne tient pas au langage, il tient à ce qu'on lui fait
+  traverser.** C'est la thèse du dépôt transposée d'un cran : entre deux appels au même
+  code Rust, seule change la forme des données qui franchissent la frontière, et c'est
+  cela qui décide du coût.
+- **Il existe un coût d'entrée**, non nul et à télécharger à chaque visite : binaire wasm,
+  glu de liaison, fragment. Les bibliothèques de sérialisation l'alourdissent.
+  L'arbitrage doit être explicite.
 
 Ce que cette équipe ne démontre pas, et que le fragment affiche lui-même : **WebAssembly
 n'a aucun accès au DOM**. Il isole le calcul, jamais l'affichage.
+
+> **Aucun chiffre n'est cité dans cette section.** Ce dépôt portait des durées et des
+> poids pour cette équipe ; ils n'avaient pas de source rejouable — aucune ligne de
+> `shell/mesures.js` ne les produisait. Ils ont été retirés plutôt qu'estimés. Si un
+> chiffre est nécessaire à l'oral, il devra être mesuré et la mesure devra être livrée
+> avec lui.
 
 Un clone sans Rust fait tourner la maquette : les artefacts publiés sont versionnés.
 
 ## Les mesures, rejouables
 
-`http://localhost:5100/mesures.html` refait sur votre machine tous les chiffres cités
-dans cette étude : qui protège d'un fragment qui boucle, si `terminate()` interrompt
-vraiment, ce que coûte un franchissement par taille, et si la carte d'import traverse la
-frontière du Worker.
+`http://localhost:5100/mesures.html` rejoue **deux** mesures sur votre machine : si
+`terminate()` interrompt vraiment un Worker parti dans une boucle qui n'écoute rien, et ce
+que coûte un aller-retour vers un Worker à quatre tailles de charge utile, la part de
+(dé)sérialisation étant isolée. Elle ne rejoue rien d'autre.
+
+La page en portait cinq. Trois ont été retirées, avec le code qui les produisait —
+l'isolation Worker contre iframe, le coût de démarrage d'un Worker, et la traversée de la
+carte d'import. Motif : ces trois mesures ne distinguent pas un résultat négatif d'un test
+qui n'a pas eu lieu.
 
 La page **refuse de mesurer** si l'onglet est en arrière-plan ou si le fil principal est
 déjà perturbé au repos. Chrome bride les minuteurs d'un onglet masqué à environ un par
-seconde : tous les blocages y rendraient ~1000 ms, référence comprise. Une mesure
-silencieuse et fausse coûte plus cher que pas de mesure.
+seconde : les durées rendues deviendraient des multiples du bridage. Une mesure silencieuse
+et fausse coûte plus cher que pas de mesure.
 
 ## Le piège de vocabulaire
 

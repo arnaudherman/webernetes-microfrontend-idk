@@ -1,30 +1,37 @@
+// @ts-check
+
 /**
  * Le jeu de données de la démonstration : les tâches d'une étude d'architecture réelle.
  *
- * Ce module vit sous `src/bas`. Il est servi par l'image `etude/taches`, à
- * l'intérieur du cluster. Aucun module de `src/haut` ne l'importe — pas même le
- * type `Tache`.
+ * Ce fichier est chargé par le processus `taches`, et par lui seul. Il n'est plus
+ * écrit en TypeScript, et ce n'est pas une régression : c'est la conséquence du
+ * déplacement.
  *
- * Ce n'est pas une coquetterie. Si un fragment importait `Tache`, l'essai 5
- * (« mf-filtres publie { etat } au lieu de { statut } ») deviendrait une erreur
- * de compilation, et la démonstration s'effondrerait : le compilateur jouerait le
- * rôle que personne ne joue en vrai entre deux équipes qui livrent séparément.
- * L'absence de type partagé est le sujet, pas un oubli.
+ * Auparavant, « aucun fragment n'importe le type `Tache` » était une discipline —
+ * tenue par un vérificateur d'imports, mais une discipline. Le type existait, à
+ * portée de `import`. Maintenant la donnée vit dans un autre processus, dans un
+ * autre fichier, dans un autre mode de langage : il n'y a plus de type à partager,
+ * même pour qui le voudrait. L'absence de contrat de forme entre les deux moitiés
+ * est devenue un fait de topologie.
+ *
+ * C'est le sujet de l'étude, pas un oubli. Si un fragment pouvait importer ce type,
+ * l'essai 5 deviendrait une erreur de compilation et la démonstration s'effondrerait :
+ * le compilateur jouerait le rôle que personne ne joue en vrai entre deux équipes qui
+ * livrent séparément.
+ *
+ * @typedef {"a-faire" | "en-cours" | "termine"} Statut
+ *
+ * @typedef {object} Tache
+ * @property {string} id
+ * @property {string} titre
+ * @property {Statut} statut
+ * @property {string} responsable
+ * @property {string} echeance      Au format AAAA-MM-JJ.
+ * @property {number} chargeJours
  */
 
-export type Statut = "a-faire" | "en-cours" | "termine";
-
-export interface Tache {
-  readonly id: string;
-  readonly titre: string;
-  readonly statut: Statut;
-  readonly responsable: string;
-  /** Échéance au format AAAA-MM-JJ. */
-  readonly echeance: string;
-  readonly chargeJours: number;
-}
-
-export const ETUDE: readonly Tache[] = [
+/** @type {readonly Tache[]} */
+export const ETUDE = [
   {
     id: "T-01",
     titre: "Recenser les applications front du SI",

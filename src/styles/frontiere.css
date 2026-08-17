@@ -30,13 +30,24 @@
   color: var(--encre-tenue);
 }
 
+/*
+ * Trois colonnes plutôt qu'un centrage flex : le sélecteur de mode occupe la
+ * première, le point de traversée la deuxième, et les deux colonnes latérales de
+ * même largeur gardent le point au centre.
+ *
+ * Le sélecteur était d'abord posé en absolu à gauche. Le point porte un libellé en
+ * `nowrap` qui s'allonge en mode « appels directs » — deux URL au lieu d'une — et
+ * finissait par recouvrir le sélecteur, qui devenait inatteignable au clic sans que
+ * rien ne le montre. Une grille rend le chevauchement impossible.
+ */
 .frontiere-ligne {
   position: relative;
-  height: 28px;
+  min-height: 28px;
   margin: 4px 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
-  justify-content: center;
+  gap: 12px;
 }
 
 .frontiere-ligne::before {
@@ -53,6 +64,8 @@
 
 .frontiere-point {
   position: relative;
+  grid-column: 2;
+  min-width: 0;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -73,6 +86,9 @@
 .frontiere-appel {
   color: var(--encre);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .frontiere-compteur {
@@ -112,6 +128,26 @@
   color: var(--panne);
 }
 
+/* Attente : le service est vivant et ne répond pas. En mode « appels directs »,
+   personne n'a écrit de budget de délai et cet état ne se termine jamais tout seul.
+   Il doit donc se distinguer d'un appel en vol, sinon l'essai 3 ressemble à de la
+   lenteur. */
+.frontiere-point[data-etat="attente"] {
+  border-color: var(--panne);
+  background: var(--panne-voile);
+}
+
+.frontiere-point[data-etat="attente"] .frontiere-pastille {
+  border-color: var(--panne);
+  background: var(--fond);
+  animation: pulsation-attente 1400ms ease-in-out infinite;
+}
+
+.frontiere-point[data-etat="attente"] .frontiere-compteur {
+  color: var(--panne);
+  font-weight: 700;
+}
+
 @keyframes pulsation-traversee {
   0%,
   100% {
@@ -122,8 +158,112 @@
   }
 }
 
+@keyframes pulsation-attente {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--panne-voile);
+  }
+  50% {
+    box-shadow: 0 0 0 5px var(--panne-voile);
+  }
+}
+
+/* Le sélecteur de position de la frontière ------------------------------------ */
+
+/* Il est posé SUR la ligne, à gauche du point de traversée. Ce n'est pas un réglage
+   d'affichage : c'est la position de la frontière elle-même, et l'écart entre les
+   deux positions est le livrable. */
+/*
+ * `position: relative` n'est pas ici un réglage de position : c'est ce qui empêche
+ * la ligne de RAYER les deux boutons.
+ *
+ * Le trait de frontière est un `::before` en `position: absolute`. Un élément
+ * positionné peint au-dessus du fond ET du texte des éléments restés statiques,
+ * quel que soit leur ordre. Le sélecteur portait pourtant déjà `background:
+ * var(--fond)` — ce fond ne servait à rien, il était recouvert.
+ *
+ * À l'écran : un trait horizontal en travers de « VIA PASSERELLE » et « APPELS
+ * DIRECTS », c'est-à-dire un texte barré. Un libellé barré se lit « annulé »,
+ * « désactivé », « obsolète » — sur le seul contrôle qui décide de la position de la
+ * frontière, et pendant qu'on explique qu'une chose peut ressembler à ce qu'elle
+ * n'est pas. Le défaut était à l'écran au moment où on le dénonce, une fois de plus.
+ *
+ * `.frontiere-point`, juste à droite, était déjà en `relative` et masquait donc le
+ * trait correctement. Les deux boîtes sont traversées de la même façon ; seule cette
+ * déclaration les distinguait. Elles reçoivent maintenant le même traitement.
+ */
+.frontiere-modes {
+  position: relative;
+  grid-column: 1;
+  justify-self: start;
+  margin-left: 24px;
+  display: flex;
+  gap: 0;
+  background: var(--fond);
+  border: 1px solid var(--trait-fort);
+}
+
+/*
+ * `nowrap` tient le compte de 612 px à la taille de projection, et c'est mesuré.
+ *
+ * La colonne 1 de `.frontiere-ligne` est en `1fr` : elle rétrécit avec la fenêtre.
+ * Sans cette déclaration, « VIA PASSERELLE » se coupait entre ses deux mots dès
+ * 1280 px — la taille de projection — et le sélecteur passait de 26 à 42 px de haut.
+ * La frontière entière gonflait de 124 à 136, et la pile journal + frontière +
+ * journal demandait 624,45 px pour les 612 disponibles.
+ *
+ * Autrement dit le calcul écrit dans `socle.css` devenait faux exactement à la taille
+ * qu'il invoque. Mesuré avec cette déclaration : la pile rend 611,96 px de 1024 à
+ * 1440 px de large, sans débordement horizontal. En dessous de 1024, c'est
+ * l'étiquette d'appel qui passe à la ligne, et le compte cesse — mais on est alors
+ * loin sous la taille de projection.
+ */
+.frontiere-mode {
+  white-space: nowrap;
+  font-family: var(--libelles);
+  font-size: var(--taille-libelle);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border: 0;
+  background: transparent;
+  color: var(--encre-tenue);
+  cursor: pointer;
+}
+
+.frontiere-mode + .frontiere-mode {
+  border-left: 1px solid var(--trait);
+}
+
+.frontiere-mode[data-actif="oui"] {
+  background: var(--encre);
+  color: var(--fond);
+}
+
+.frontiere-mode:focus-visible {
+  outline: 2px solid var(--nominal);
+  outline-offset: -2px;
+}
+
+.frontiere-explication {
+  display: block;
+  padding: 2px 24px 0;
+  font-family: var(--libelles);
+  font-size: var(--taille-libelle);
+  color: var(--encre-tenue);
+}
+
+.source-correlation {
+  color: var(--encre-tenue);
+  border-left: 1px solid var(--trait);
+  padding-left: 8px;
+  margin-left: 2px;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .frontiere-point[data-etat="en-vol"] .frontiere-pastille {
+  .frontiere-point[data-etat="en-vol"] .frontiere-pastille,
+  .frontiere-point[data-etat="attente"] .frontiere-pastille {
     animation: none;
   }
 }

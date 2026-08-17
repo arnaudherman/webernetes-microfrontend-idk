@@ -2,8 +2,9 @@
  * La barre d'essais.
  *
  * Fixée en bas de fenêtre pour rester atteignable quelle que soit la position de
- * défilement : l'enchaînement essai 5 puis essai 2 doit se jouer sans rechargement
- * ni défilement.
+ * défilement : l'enchaînement essai 4 puis essai 5 — la paire décisive, deux boutons
+ * voisins de part et d'autre de la ligne — doit se jouer sans rechargement ni
+ * défilement.
  */
 
 .barre-essais {
@@ -13,7 +14,33 @@
   bottom: 0;
   height: var(--hauteur-barre);
   display: grid;
-  grid-template-columns: minmax(210px, auto) minmax(300px, auto) minmax(320px, 1fr);
+  /*
+   * Les minima des deux groupes ont été BAISSÉS, et l'observation avec eux.
+   *
+   * `auto` en borne haute vaut `max-content` : tant qu'il y a de la place, les deux
+   * groupes prennent exactement ce que leurs libellés demandent et l'observation
+   * reçoit le reste. Les planchers ne rétrécissent donc RIEN au large — mesuré, les
+   * colonnes se résolvent à l'identique à 1600 px avant et après le changement. Ils
+   * décident seulement de qui cède en premier quand la place manque.
+   *
+   * Ce qu'ils achètent est précis, et rien de plus : le seuil en dessous duquel un
+   * libellé doit passer à la ligne descend de 1280 px à 1200 px.
+   *
+   *   1280 px  ancien : tout sur une ligne · nouveau : tout sur une ligne
+   *   1200 px  ancien : 2 boutons sur deux lignes · nouveau : tout sur une ligne
+   *   1100 px  ancien : 4 boutons · nouveau : 2
+   *   1024 px  ancien : 5 boutons · nouveau : 3
+   *
+   * C'est ce qui permet à `--hauteur-barre` de rester à 188 px jusqu'à 1200 px, donc
+   * de tenir le compte de 612 px sur toute cette plage, et de n'avoir qu'UNE règle
+   * média en dessous. Avec les anciens planchers il en aurait fallu une dès 1280 —
+   * c'est-à-dire à la taille de projection elle-même.
+   *
+   * Le prix est payé à 940 px, où la barre se met à déborder à droite. C'est aussi
+   * la largeur à laquelle la grille `.modules` déborde déjà : le plancher de
+   * l'application ne bouge pas.
+   */
+  grid-template-columns: minmax(232px, auto) minmax(392px, auto) minmax(260px, 1fr);
   gap: 20px;
   padding: 9px 24px 10px;
   background: var(--surface);
@@ -63,10 +90,30 @@
   padding: 0 5px;
 }
 
+/*
+ * Un libellé de bouton passe à la ligne ; il ne se fait pas amputer.
+ *
+ * `white-space: nowrap` plus `text-overflow: ellipsis` tenaient jusqu'à 1280 px, et
+ * cédaient en dessous — mesuré, ellipses réellement affichées :
+ *
+ *   1280 px  aucune
+ *   1240 px  « remplacer mf-tableau par 2.0 »
+ *   1100 px  et « casser le contrat front »
+ *   1024 px  cinq des huit, dont « servir une charge utile non conforme »
+ *
+ * Sur un bouton, la fin du libellé n'est pas un ornement : c'est ce qu'il fait.
+ * « casser le contrat… » ne dit pas lequel des deux, et toute la démonstration tient
+ * sur l'écart entre le contrat serveur (essai 2) et le contrat front (essai 5).
+ * « servir une charge util… » ne dit pas ce qui est servi.
+ *
+ * L'ellipse était de surcroît le pire des choix ici : elle CACHE le manque de place
+ * au lieu de le montrer, et un écran de projection ne prévient pas. Un libellé qui
+ * passe à deux lignes fait grandir son bouton, donc la colonne, donc la barre — le
+ * dépassement devient une hauteur qu'on mesure, et la règle média sur
+ * `--hauteur-barre` lui fait la place.
+ */
 .essai-libelle {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  min-width: 0;
 }
 
 .bouton.essai[data-arme="oui"] .essai-numero {

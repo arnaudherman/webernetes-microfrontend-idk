@@ -3,7 +3,7 @@ import type { Shell } from "./shell";
 /**
  * Les quatre essais qui se jouent au-dessus de la frontière.
  *
- * Ils n'ont aucune idée de l'existence d'un cluster : ce sont des montages, des
+ * Ils n'ont aucune idée de l'existence des services : ce sont des montages, des
  * démontages et des substitutions d'éléments personnalisés, rien d'autre.
  *
  * Tous passent par le shell, qui ne connaît des fragments que leurs noms de balise.
@@ -16,7 +16,7 @@ export const BALISE_FILTRES_ROMPUE = "mf-filtres-v2";
 export const BALISE_TABLEAU_V1 = "mf-tableau";
 export const BALISE_TABLEAU_V2 = "mf-tableau-v2";
 
-/* ------------------------------------------- essais 3 et 4 : mf-detail */
+/* ------------------------------------------- essais 6 et 7 : mf-detail */
 
 export function demonterDetail(shell: Shell): void {
   shell.demonter("detail");
@@ -39,7 +39,7 @@ export function contratFrontRompu(shell: Shell): boolean {
 /**
  * Substitue au fragment de filtres une version qui publie `etat` au lieu de `statut`.
  *
- * Le shell fait exactement le même geste qu'à l'essai 6 : il change un nom de balise.
+ * Le shell fait exactement le même geste qu'à l'essai 8 : il change un nom de balise.
  * Il n'a aucun moyen de savoir que celui-ci rompt le contrat et l'autre non — la
  * forme des charges utiles n'est écrite nulle part qu'il puisse consulter.
  */
@@ -49,7 +49,7 @@ export function basculerContratFront(shell: Shell): boolean {
   return !rompu;
 }
 
-/* ------------------------------- essai 6 : remplacer l'implémentation du tableau */
+/* ------------------------------- essai 8 : remplacer l'implémentation du tableau */
 
 export function tableauEnV2(shell: Shell): boolean {
   return shell.nomBaliseDe("tableau") === BALISE_TABLEAU_V2;

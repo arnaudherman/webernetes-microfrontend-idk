@@ -6,16 +6,17 @@
   "description": "Deux formes de modularite dans un seul onglet, separees par une frontiere visible.",
   "scripts": {
     "dev": "vite",
+    "services": "node src/bas/services/console.mjs",
+    "demo": "node src/bas/services/console.mjs --avec-vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc --noEmit && tsc --noEmit -p maquette-independance/tsconfig.json",
+    "typecheck": "tsc --noEmit && tsc --noEmit -p src/bas/services/tsconfig.json && tsc --noEmit -p maquette-independance/tsconfig.json",
     "verifier-frontiere": "node outils/verifier-frontiere.mjs",
+    "verifier-affordance": "node outils/verifier-affordance.mjs",
     "recette": "node outils/recette.mjs"
   },
-  "dependencies": {
-    "@ngrok/webernetes": "0.5.5"
-  },
   "devDependencies": {
+    "@types/node": "^26.2.0",
     "typescript": "^5.9.0",
     "vite": "^7.0.0"
   }

@@ -48,6 +48,8 @@ const STYLE = `
   }
   .vide { font-family: var(--libelles); font-size: var(--taille-libelle);
           color: var(--encre-tenue); font-style: italic; }
+  .attente { margin: 0; padding: 14px 12px; font-family: var(--texte);
+             font-size: var(--taille-corps); line-height: 1.5; color: var(--encre-tenue); }
   button.tache {
     display: block; width: 100%; text-align: left; cursor: pointer;
     background: var(--surface); border: 1px solid var(--trait);
@@ -82,6 +84,20 @@ export class MfTableau extends HTMLElement {
   #filtre: FiltreAttendu = {};
   #selection: string | undefined;
 
+  /**
+   * A-t-on reçu des données, ne serait-ce qu'une fois ?
+   *
+   * « Aucune donnée reçue » et « zéro tâche reçue » sont deux états différents, et les
+   * confondre produisait un mensonge à l'écran : au démarrage, l'en-tête annonçait
+   * « en attente des services » pendant que ce fragment affichait « 0 tâche affichée
+   * sur 0 » — donc qu'il avait compté. Un décompte est une affirmation ; on ne
+   * l'énonce qu'après avoir observé quelque chose.
+   *
+   * `#taches.length === 0` ne suffit pas à distinguer les deux cas : un jeu vide est
+   * une réponse, l'absence de réponse n'en est pas une. D'où ce drapeau.
+   */
+  #recu = false;
+
   constructor() {
     super();
     this.#racine = this.attachShadow({ mode: "open" });
@@ -94,6 +110,7 @@ export class MfTableau extends HTMLElement {
         bus.abonner("donnees:chargees", "mf-tableau", (charge) => {
           const recu = charge as { taches?: TacheAttendue[] } | undefined;
           this.#taches = recu?.taches ?? [];
+          this.#recu = true;
           this.#rendre();
         }),
         bus.abonner("filtre:change", "mf-tableau", (charge) => {
@@ -160,6 +177,18 @@ export class MfTableau extends HTMLElement {
   #rendre(): void {
     const style = document.createElement("style");
     style.textContent = STYLE;
+
+    // Rien n'a jamais été reçu : on le dit, et on ne compte pas. Même traitement que
+    // `mf-detail` et `mf-charge`, qui n'ont jamais eu ce défaut.
+    if (!this.#recu) {
+      const attente = document.createElement("p");
+      attente.className = "attente";
+      attente.textContent =
+        "Aucune donnée reçue. Ce fragment attend un donnees:chargees et n'a rien à compter " +
+        "tant qu'il ne l'a pas obtenu.";
+      this.#racine.replaceChildren(style, attente);
+      return;
+    }
 
     const affichees = this.#filtrees();
 

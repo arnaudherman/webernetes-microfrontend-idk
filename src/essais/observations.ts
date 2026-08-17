@@ -19,34 +19,67 @@ export interface Observation {
 }
 
 export const OBSERVATION_INITIALE: Observation = {
-  titre: "six essais, groupés par moitié",
-  verdict: "Deux essais agissent sous la frontière, quatre au-dessus.",
+  titre: "huit essais, et la numérotation monte à travers la ligne",
+  verdict: "Les essais 1 à 4 se jouent sous la frontière, les essais 5 à 8 au-dessus.",
   detail:
-    "Chaque essai met à jour cette zone. Les essais 5 puis 2 sont à jouer l'un après " +
-    "l'autre, sans rechargement : c'est la comparaison décisive.",
+    "Chaque essai met à jour cette zone. Les essais 4 puis 5 sont à jouer l'un après " +
+    "l'autre, sans rechargement : c'est la même faute — un champ renommé, contrat " +
+    "déclaré inchangé — placée de part et d'autre de la ligne. Deux boutons voisins, " +
+    "séparés uniquement par elle. C'est la comparaison décisive. " +
+    "Les essais du bas se rejouent dans les deux modes, avec le sélecteur posé sur la ligne.",
   ton: "neutre",
 };
 
-export function suppressionPod(nom: string, noeud: string): Observation {
+/* ------------------------------------------- essai 1 : tuer le service charges */
+
+export function serviceTue(mode: "passerelle" | "direct"): Observation {
+  if (mode === "passerelle") {
+    return {
+      titre: "essai 1 — l'amont optionnel manque, la passerelle tranche",
+      verdict: "200 partiel : les tâches sont là, l'agrégat manque, et le manque est NOMMÉ.",
+      detail:
+        "Le processus est mort — pid disparu, port fermé. La passerelle a reçu un vrai " +
+        "ECONNREFUSED, immédiatement : sur la boucle locale un refus ne fait pas attendre. " +
+        "Elle a distingué l'amont essentiel de l'amont optionnel et décidé de servir ce " +
+        "qui était servable, en disant quoi manque et pourquoi. Rejouez le même essai en " +
+        "appels directs.",
+      ton: "panne",
+    };
+  }
+
   return {
-    titre: "essai 1 — un pod supprimé, un pod recréé",
-    verdict: "C'est ce que Webernetes enseigne, et rien là-dedans ne concerne l'interface.",
+    titre: "essai 1 — la même panne, sans personne pour la nommer",
+    verdict: "Le manque est constaté, la cause est perdue : « Failed to fetch », et rien d'autre.",
     detail:
-      `${nom} a été supprimé sur ${noeud}. Le contrôleur en a recréé un, le planificateur ` +
-      "l'a placé, le Service a routé vers lui dès qu'il a été prêt. Toute la séquence est " +
-      "datée dans le journal du cluster, à droite.",
-    ton: "nominal",
+      "La page a bien dégradé — parce que ce code-ci a été écrit pour le faire, et qu'il " +
+      "sera à réécrire dans chaque front qui parlera à ces services. Mais le navigateur " +
+      "rend le même TypeError pour un service mort, un refus CORS et un port fermé : il le " +
+      "fait exprès, et c'est définitif. La décision a survécu au déplacement de la " +
+      "frontière ; l'information qui la fonde, non.",
+    ton: "panne",
   };
 }
 
-export const CONTRAT_SERVEUR_ROMPU: Observation = {
-  titre: "essai 2 — la même panne, immédiatement qualifiée",
-  verdict: "Le réseau a qualifié la panne : un code d'état, à l'appel suivant.",
+export const SERVICE_RELANCE: Observation = {
+  titre: "essai 1 — service relancé",
+  verdict: "Nouveau pid, compteur de requêtes à zéro : c'est un autre processus.",
   detail:
-    "Le pod répond 500 sans avoir redémarré — même conteneur, zéro redémarrage. L'appelant " +
-    "n'a rien eu à deviner : il affiche une erreur explicite, propose de réessayer, et sait " +
-    "compter ses échecs. La frontière est vérifiée par un tiers qui n'est ni l'émetteur ni " +
-    "le destinataire. Comparez avec l'essai 5.",
+    "Rien ne l'avait relancé tout seul. Il n'y a plus de contrôleur sous cette frontière, " +
+    "et c'est le prix des vrais processus — payé une fois, en échange de vraies pannes.",
+  ton: "nominal",
+};
+
+/* ------------------------------------- essai 2 : casser le contrat serveur (500) */
+
+export const CONTRAT_SERVEUR_ROMPU: Observation = {
+  titre: "essai 2 — l'amont essentiel tombe, et ça ne se dégrade pas",
+  verdict: "503 : sans la liste des tâches, il n'y a rien à composer, et la passerelle le dit.",
+  detail:
+    "taches répond 500 sans avoir redémarré — même processus, même pid, l'uptime ne " +
+    "bouge pas. C'est bien la même instance, vivante, qui se met à mentir. Comparez avec " +
+    "l'essai 1, joué il y a un instant : même passerelle, autre amont, autre décision. " +
+    "Distinguer l'essentiel de l'optionnel demande quelqu'un au milieu qui connaisse les " +
+    "deux — c'est exactement ce qui n'existe pas au-dessus de la frontière.",
   ton: "panne",
 };
 
@@ -59,8 +92,96 @@ export const CONTRAT_SERVEUR_RETABLI: Observation = {
   ton: "nominal",
 };
 
+/* -------------------------------------------- essai 3 : figer, sans tuer */
+
+export function serviceFige(mode: "passerelle" | "direct"): Observation {
+  if (mode === "passerelle") {
+    return {
+      titre: "essai 3 — vivant, et muet",
+      verdict: "La passerelle a renoncé à 800 ms, parce qu'elle porte un budget de délai.",
+      detail:
+        "SIGSTOP : le processus existe toujours, sa socket d'écoute est ouverte, le noyau " +
+        "accepte les connexions — et personne ne répond jamais. Ce n'est pas un refus, " +
+        "c'est un silence, et rien ne le distingue d'une lenteur sinon une décision. " +
+        "Écrire un intermédiaire OBLIGE à la prendre : il faut bien répondre quelque chose.",
+      ton: "panne",
+    };
+  }
+
+  return {
+    titre: "essai 3 — vivant, muet, et la page attend",
+    verdict: "Aucun budget de délai : la page attend, et elle attendra indéfiniment.",
+    detail:
+      "Regardez le compteur sur la ligne de frontière : il monte. fetch n'expire jamais " +
+      "de lui-même. On POURRAIT écrire ce budget ici — il faudrait l'écrire, et le " +
+      "réécrire dans chaque front. Personne ne vous y oblige, et c'est précisément le " +
+      "problème : la contrainte n'a pas disparu avec la frontière, elle est devenue " +
+      "facultative. Cliquez « dégeler ».",
+    ton: "panne",
+  };
+}
+
+export const SERVICE_DEGELE: Observation = {
+  titre: "essai 3 — service dégelé",
+  verdict: "SIGCONT : le processus reprend là où il s'était arrêté, sans redémarrer.",
+  detail:
+    "Le compteur de requêtes n'a pas été remis à zéro et le pid est le même : c'est bien " +
+    "la même instance. Un gel n'est pas une mort, et un système qui ne distingue pas les " +
+    "deux traite deux pannes différentes de la même façon.",
+  ton: "nominal",
+};
+
+/* ------------------------- essai 4 : servir une charge utile non conforme */
+
+/**
+ * Le premier des deux essais décisifs, et à lui seul deux des trois positions.
+ *
+ * La MÊME faute — `taches` sert « etat » là où le contrat dit « statut » — est jouée
+ * ici sous la frontière, une fois avec un intermédiaire et une fois sans. L'essai 5
+ * la rejoue une troisième fois, au-dessus. Trois positions, une seule faute.
+ */
+export function formeRompue(mode: "passerelle" | "direct"): Observation {
+  if (mode === "passerelle") {
+    return {
+      titre: "essai 4 — première position : un intermédiaire, et l'écart est nommé",
+      verdict: "502 : « champ requis absent : statut · champ inattendu : etat ».",
+      detail:
+        "taches sert etat au lieu de statut. Le nom de la ressource n'a pas bougé, le code " +
+        "d'état est 200, le service est en parfaite santé. Trois consommateurs reçoivent " +
+        "cette charge utile sans broncher — charges en tire un agrégat faux, avec une " +
+        "catégorie « undefined » qui contient tout. Un seul la refuse, et ce n'est pas « le " +
+        "réseau » : c'est un intermédiaire, parce que quelqu'un y a écrit la forme attendue. " +
+        "Question à poser avant qu'on vous la pose : qui possède ce schéma ? " +
+        "Basculez maintenant en appels directs, sans rien rétablir.",
+      ton: "panne",
+    };
+  }
+
+  return {
+    titre: "essai 4 — deuxième position : plus d'intermédiaire, et le tableau ment",
+    verdict: "200, aucune exception, aucun avertissement. Le tableau annonce neuf sur neuf.",
+    detail:
+      "Même faute, même service, même HTTP — et cette fois elle passe. Le protocole n'a " +
+      "rien vérifié : il n'a jamais rien vérifié. Ce qui vérifiait, il y a un instant, " +
+      "c'était la passerelle, et elle seule. Retirez l'intermédiaire et le réseau devient " +
+      "exactement aussi silencieux qu'un bus d'événements. " +
+      "Jouez maintenant l'essai 5, juste à droite : la même faute, au-dessus de la ligne.",
+    ton: "panne",
+  };
+}
+
+export const FORME_RETABLIE: Observation = {
+  titre: "essai 4 — forme rétablie",
+  verdict: "Le champ a repris son nom, et les deux modes redeviennent indiscernables.",
+  detail:
+    "C'est le point à retenir : hors panne, les deux positions de la frontière donnent le " +
+    "même écran. L'écart ne se voit que le jour où quelque chose casse — ce qui est le " +
+    "plus mauvais moment pour le découvrir.",
+  ton: "nominal",
+};
+
 export const FRAGMENT_DEMONTE: Observation = {
-  titre: "essai 3 — déployabilité indépendante, perte silencieuse",
+  titre: "essai 6 — déployabilité indépendante, perte silencieuse",
   verdict: "Cliquez une tâche : le journal du bus affichera « 0 abonné », sans rien signaler.",
   detail:
     "Le fragment de détail a disparu, les trois autres n'ont pas bougé, la console est " +
@@ -70,7 +191,7 @@ export const FRAGMENT_DEMONTE: Observation = {
 };
 
 export const FRAGMENT_REMONTE: Observation = {
-  titre: "essai 4 — un fragment en différé démarre aveugle",
+  titre: "essai 7 — un fragment en différé démarre aveugle",
   verdict: "Le fragment est revenu vide : le bus ne rejoue rien.",
   detail:
     "Tout ce qui a été publié pendant son absence lui est définitivement perdu. Ce n'est pas " +
@@ -80,13 +201,16 @@ export const FRAGMENT_REMONTE: Observation = {
 };
 
 export const CONTRAT_FRONT_ROMPU: Observation = {
-  titre: "essai 5 — l'interface ment, et rien ne le signale",
+  titre: "essai 5 — troisième position : l'interface ment, et rien ne le signale",
   verdict: "Le filtre indique « en cours », le tableau annonce neuf sur neuf. Le chiffre est faux.",
   detail:
     "La version 2.0 des filtres publie etat au lieu de statut ; son contrat déclaré, lui, est " +
     "inchangé. Le tableau lit statut, obtient undefined, en conclut qu'aucun filtre n'est " +
     "demandé. Aucune exception, aucun journal anormal. Le couplage n'a pas disparu : il a été " +
-    "déplacé du code vers un contrat non typé que personne ne vérifie.",
+    "déplacé du code vers un contrat non typé que personne ne vérifie. " +
+    "Vous venez de voir la même faute trois fois : nommée par un intermédiaire, avalée par " +
+    "du vrai HTTP sans intermédiaire, et ici invisible. Ce que déplacer la frontière fait " +
+    "perdre, ce n'est pas la détection — il n'y en avait pas — c'est la QUALIFICATION.",
   ton: "panne",
 };
 
@@ -101,18 +225,19 @@ export const CONTRAT_FRONT_RETABLI: Observation = {
 };
 
 export const TABLEAU_REMPLACE: Observation = {
-  titre: "essai 6 — substitution à chaud, contrat respecté",
+  titre: "essai 8 — substitution à chaud, contrat respecté",
   verdict: "La substitution tient parce que le contrat est respecté. C'est cela qu'il faut gouverner.",
   detail:
     "Le rendu a changé du tout au tout ; le shell n'a changé qu'un nom de balise et les autres " +
-    "fragments n'ont pas été prévenus. Le coût est visible à l'instant : le fragment neuf est " +
-    "arrivé vide et il a fallu redemander les données au cluster. Même angle mort qu'à " +
-    "l'essai 4, payé à chaque substitution.",
+    "fragments n'ont pas été prévenus. C'est le seul essai dont le résultat est positif, et il " +
+    "compte autant que les autres. Le coût est visible à l'instant : le fragment neuf est " +
+    "arrivé vide et il a fallu redemander les données aux services. Même angle mort qu'à " +
+    "l'essai 7, payé à chaque substitution.",
   ton: "nominal",
 };
 
 export const TABLEAU_RESTAURE: Observation = {
-  titre: "essai 6 — retour à l'implémentation d'origine",
+  titre: "essai 8 — retour à l'implémentation d'origine",
   verdict: "La réversibilité est réelle, elle n'est pas gratuite.",
   detail:
     "Même geste, même coût : un nom de balise changé, un rechargement pour repeupler le " +

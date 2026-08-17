@@ -1,11 +1,15 @@
-import { servicesAppliques } from "./cluster";
-import { observerJournalCluster, type LigneCluster } from "./journal-cluster";
-import { observerPods, observerTrafic, comptePrets, type EtatPod } from "./etat-pods";
-import { DEPLOIEMENT_CHARGES, DEPLOIEMENT_TACHES, REPLIQUES_TACHES } from "./manifestes";
+import { PORTS } from "./adresses";
+import { observerLien, type Lien } from "./flux-console";
+import { observerJournalCollecte, type LigneCollectee } from "./journal-collecte";
+import {
+  observerProcessus,
+  observerTrafic,
+  presentation,
+  type EtatProcessus,
+} from "./etat-processus";
 
-/** Rendu de la moitié basse : journal du cluster, nœuds, pods, services. */
+/** Rendu de la moitié basse : journal collecté, processus, console. */
 
-const NOEUDS = ["node-1", "node-2", "node-3"];
 const PLAFOND_LIGNES = 300;
 
 function heure(horodatage: number): string {
@@ -24,37 +28,45 @@ function cellule(classe: string, texte: string): HTMLElement {
   return element;
 }
 
-function ligneJournal(ligne: LigneCluster): HTMLLIElement {
+/**
+ * Une ligne du journal.
+ *
+ * La colonne d'origine est la première, et elle n'est pas décorative : la console
+ * déclenche les pannes ET collecte le journal. Sans elle, on pourrait soupçonner le
+ * journal de raconter ce que la console a décidé plutôt que ce qui s'est produit.
+ *
+ *   ·   rapporté par le service lui-même, sur sa sortie standard
+ *   »   constaté ou décidé par la console
+ */
+function ligneJournal(ligne: LigneCollectee): HTMLLIElement {
   const element = document.createElement("li");
   element.className = `ligne ligne-${ligne.nature}`;
+  element.dataset["origine"] = ligne.origine;
   element.dataset["cle"] = ligne.cle;
 
+  element.append(cellule("origine", ligne.origine === "console" ? "»" : "·"));
   element.append(cellule("heure", heure(ligne.horodatage)));
+  element.append(cellule("service", ligne.service ?? "console"));
 
   if (ligne.nature === "requete") {
-    element.append(cellule("verbe", ligne.methode ?? "—"));
-    element.append(cellule("cible", ligne.chemin ?? "—"));
+    element.append(cellule("cible", `${ligne.methode ?? "—"} ${ligne.chemin ?? "—"}`));
 
-    const statut = cellule(
-      "statut",
-      ligne.status === undefined ? (ligne.erreur ? "ERR" : "—") : String(ligne.status),
-    );
+    const statut = cellule("statut", ligne.status === undefined ? "—" : String(ligne.status));
     if (ligne.status !== undefined) {
       statut.classList.add(ligne.status >= 400 ? "est-panne" : "est-nominal");
-    } else if (ligne.erreur) {
-      statut.classList.add("est-panne");
     }
     element.append(statut);
 
     element.append(cellule("duree", ligne.dureeMs === undefined ? "—" : `${ligne.dureeMs} ms`));
-    element.append(cellule("chaine", ligne.erreur ? `${ligne.chaine ?? ""} — ${ligne.erreur}` : (ligne.chaine ?? "")));
+    element.append(
+      cellule("chaine", `${ligne.de ?? "?"} → ${ligne.service ?? "?"}   id=${ligne.id ?? "—"}`),
+    );
   } else {
-    element.append(cellule("verbe", "ÉVÉN"));
-    element.append(cellule("cible", `${ligne.motif ?? "?"} · ${ligne.objet ?? "?"}`));
-    const niveau = cellule("statut", ligne.niveau === "Warning" ? "!" : "·");
-    if (ligne.niveau === "Warning") niveau.classList.add("est-panne");
+    element.append(cellule("cible", ligne.nature));
+    const niveau = cellule("statut", ligne.niveau === "attention" ? "!" : "·");
+    if (ligne.niveau === "attention") niveau.classList.add("est-panne");
     element.append(niveau);
-    element.append(cellule("duree", ligne.source ?? "—"));
+    element.append(cellule("duree", ""));
     element.append(cellule("chaine", ligne.message ?? ""));
   }
 
@@ -66,29 +78,61 @@ function rendreJournal(hote: HTMLElement): () => void {
   liste.className = "journal-lignes donnee";
   liste.setAttribute("aria-live", "off");
 
-  hote.replaceChildren(
-    (() => {
-      const entete = document.createElement("header");
-      entete.className = "journal-tete";
-      const titre = document.createElement("h2");
-      titre.className = "titre-zone";
-      titre.textContent = "journal du cluster";
-      const legende = document.createElement("p");
-      legende.className = "journal-legende";
-      legende.innerHTML =
-        "horodatage · méthode · chemin · <strong>code d'état</strong> · durée · chaîne de sauts";
-      entete.append(titre, legende);
-      return entete;
-    })(),
-    liste,
-  );
+  const entete = document.createElement("header");
+  entete.className = "journal-tete";
+
+  const titre = document.createElement("h2");
+  titre.className = "titre-zone";
+  titre.textContent = "journal collecté — quatre processus, un flux";
+
+  const legende = document.createElement("p");
+  legende.className = "journal-legende";
+  legende.innerHTML =
+    "origine · horodatage · service · appel · <strong>code d'état</strong> · durée · " +
+    "chemin et corrélation &nbsp;—&nbsp; <strong>·</strong> rapporté par le service, " +
+    "<strong>»</strong> constaté par la console";
+
+  /**
+   * Le statut de ce journal est affiché, parce qu'il a changé et que le changement
+   * est un résultat.
+   *
+   * Au-dessus de la ligne, la page VOIT : le journal du bus est écrit dans le fil
+   * d'exécution qui publie, et il ne peut pas diverger de ce qui se produit. Ici, la
+   * page est INFORMÉE : quatre processus lui racontent ce qu'ils ont bien voulu
+   * écrire, par un canal qui peut prendre du retard ou tomber. C'est ainsi qu'on
+   * observe un système réel, et il vaut mieux l'annoncer que laisser croire à une
+   * transparence que la version simulée avait et que celle-ci n'a plus.
+   */
+  const statut = document.createElement("p");
+  statut.className = "journal-statut";
+  statut.innerHTML =
+    "<strong>Rapporté, non constaté</strong> — la page ne voit pas les services, ils lui " +
+    "racontent. Au-dessus de la ligne on voit ; en dessous on est informé.";
+
+  const etatLien = document.createElement("p");
+  etatLien.className = "lien-console donnee";
+
+  // Le statut est un frère de l'en-tête, pas un quatrième élément de sa rangée :
+  // l'en-tête est une ligne de base unique, et y insérer une phrase pleine largeur
+  // la ferait éclater en quatre lignes au détriment du journal lui-même.
+  entete.append(titre, legende, etatLien);
+  hote.replaceChildren(entete, statut, liste);
+
+  const detacherLien = observerLien((lien: Lien) => {
+    etatLien.dataset["etat"] = lien.etat;
+    etatLien.textContent =
+      lien.etat === "ouvert"
+        ? `flux ouvert depuis la console, 127.0.0.1:${PORTS.console}`
+        : lien.etat === "attente"
+          ? "connexion au flux de la console…"
+          : `flux rompu — ${lien.detail ?? ""} · la moitié basse n'est plus rapportée. ` +
+            `Lancer « npm run services ».`;
+  });
 
   let derniereCle: string | undefined;
 
-  return observerJournalCluster((lignes) => {
-    const depuis = derniereCle
-      ? lignes.findIndex((ligne) => ligne.cle === derniereCle) + 1
-      : 0;
+  const detacherJournal = observerJournalCollecte((lignes) => {
+    const depuis = derniereCle ? lignes.findIndex((ligne) => ligne.cle === derniereCle) + 1 : 0;
     const aAjouter = depuis > 0 || derniereCle === undefined ? lignes.slice(depuis) : lignes;
 
     if (aAjouter.length === 0 && lignes.length === 0) {
@@ -104,125 +148,129 @@ function rendreJournal(hote: HTMLElement): () => void {
     derniereCle = lignes.at(-1)?.cle;
     if (enBas) liste.scrollTop = liste.scrollHeight;
   });
+
+  return () => {
+    detacherLien();
+    detacherJournal();
+  };
 }
 
-function cartePod(pod: EtatPod): HTMLElement {
+function duree(ms: number | undefined): string {
+  if (ms === undefined) return "—";
+  const secondes = Math.floor(ms / 1000);
+  if (secondes < 60) return `${secondes} s`;
+  return `${Math.floor(secondes / 60)} min ${String(secondes % 60).padStart(2, "0")} s`;
+}
+
+const LIBELLES: Record<string, string> = {
+  actif: "actif",
+  fige: "figé — vivant, muet",
+  muet: "ne répond plus",
+  absent: "arrêté",
+};
+
+function carteProcessus(etat: EtatProcessus): HTMLElement {
   const carte = document.createElement("article");
-  carte.className = "pod";
-  carte.dataset["presentation"] = pod.presentation;
-  carte.dataset["nom"] = pod.nom;
+  carte.className = "processus";
+  carte.dataset["presentation"] = presentation(etat);
+  carte.dataset["nom"] = etat.nom;
 
   const nom = document.createElement("div");
-  nom.className = "pod-nom donnee";
-  nom.textContent = pod.nom;
+  nom.className = "processus-nom donnee";
+  nom.textContent = `${etat.nom}:${etat.port}`;
 
   const meta = document.createElement("div");
-  meta.className = "pod-meta";
+  meta.className = "processus-meta";
   const phase = document.createElement("span");
-  phase.className = "pod-phase";
-  phase.textContent = pod.presentation === "terminaison" ? "Terminating" : pod.phase;
-  const ip = document.createElement("span");
-  ip.className = "pod-ip donnee";
-  ip.textContent = pod.ip;
-  meta.append(phase, ip);
+  phase.className = "processus-phase";
+  phase.textContent = LIBELLES[presentation(etat)] ?? "—";
+  const pid = document.createElement("span");
+  pid.className = "processus-pid donnee";
+  pid.textContent = etat.pid === undefined ? "pas de pid" : `pid ${etat.pid}`;
+  meta.append(phase, pid);
 
-  const etat = document.createElement("div");
-  etat.className = "pod-etat";
-  etat.textContent =
-    (pod.pret ? "prêt" : "pas prêt") +
-    (pod.redemarrages > 0 ? ` · ${pod.redemarrages} redémarrage(s)` : "");
+  const chiffres = document.createElement("div");
+  chiffres.className = "processus-etat";
+  chiffres.textContent =
+    `${etat.requetes} requête${etat.requetes > 1 ? "s" : ""} · en vie ${duree(etat.depuisMs)}` +
+    (etat.dernierStatus === undefined ? "" : ` · dernier ${etat.dernierStatus}`);
 
-  carte.append(nom, meta, etat);
+  carte.append(nom, meta, chiffres);
   return carte;
 }
 
-function rendrePods(hote: HTMLElement): () => void {
+function rendreProcessus(hote: HTMLElement): () => void {
   const entete = document.createElement("header");
   entete.className = "topologie-tete";
   const titre = document.createElement("h2");
   titre.className = "titre-zone";
-  titre.textContent = "cluster — trois nœuds, namespace default";
+  titre.textContent = "trois processus, trois ports, un vrai réseau";
   const compteurs = document.createElement("p");
   compteurs.className = "compteurs donnee";
   entete.append(titre, compteurs);
 
   const grille = document.createElement("div");
-  grille.className = "noeuds";
+  grille.className = "processus-grille";
 
-  const zoneServices = document.createElement("div");
-  zoneServices.className = "services donnee";
+  /**
+   * La console est affichée à part, sous une étiquette qui dit ce qu'elle est.
+   * La laisser dans la grille lui donnerait le statut d'un composant de
+   * l'architecture, alors qu'elle occupe la place de la main de l'opérateur et du
+   * collecteur de journaux — deux choses qui existent dans tout système réel et dont
+   * aucune n'entre dans la comparaison.
+   */
+  const note = document.createElement("p");
+  note.className = "hors-architecture prose";
+  note.textContent =
+    `Un quatrième processus tourne sur 127.0.0.1:${PORTS.console} : la console. ` +
+    "Elle lance les trois autres, collecte leur journal et exécute les essais. Elle " +
+    "est l'établi, pas un composant : rien de ce qu'elle fait n'entre dans la comparaison.";
 
-  hote.replaceChildren(entete, grille, zoneServices);
+  hote.replaceChildren(entete, grille, note);
 
-  const detacherPods = observerPods((pods) => {
-    compteurs.textContent =
-      `${DEPLOIEMENT_TACHES} ${comptePrets("taches")}/${REPLIQUES_TACHES} prêts · ` +
-      `${DEPLOIEMENT_CHARGES} ${comptePrets("charges")}/1 prêt`;
+  const detacherProcessus = observerProcessus((processus) => {
+    // « 0/0 en état de répondre » est un décompte sur un ensemble vide : ça se lit
+    // comme une observation alors que c'est une absence d'observation. Tant que la
+    // console n'a rien rapporté, on le dit — et le titre annonce la composition de
+    // l'architecture, pas ce qu'on aurait constaté.
+    if (processus.length === 0) {
+      compteurs.textContent = "aucun service rapporté";
+      const rien = document.createElement("p");
+      rien.className = "aucun-service prose";
+      rien.textContent =
+        "La console n'a encore rien rapporté. Ce n'est pas « zéro service en état de " +
+        "répondre » : c'est que personne ne nous a rien dit. Lancer « npm run demo ».";
+      grille.replaceChildren(rien);
+      return;
+    }
 
-    grille.replaceChildren(
-      ...NOEUDS.map((noeud, index) => {
-        const colonne = document.createElement("div");
-        colonne.className = "noeud";
-
-        const tete = document.createElement("div");
-        tete.className = "noeud-tete";
-        const nom = document.createElement("span");
-        nom.textContent = noeud;
-        const adresse = document.createElement("span");
-        adresse.className = "donnee noeud-ip";
-        adresse.textContent = `192.168.1.${index + 1}`;
-        tete.append(nom, adresse);
-
-        const contenu = document.createElement("div");
-        contenu.className = "noeud-pods";
-        const siens = pods.filter((pod) => pod.noeud === noeud);
-        if (siens.length === 0) {
-          const vide = document.createElement("p");
-          vide.className = "noeud-vide";
-          vide.textContent = "aucun pod applicatif";
-          contenu.append(vide);
-        } else {
-          contenu.append(...siens.map(cartePod));
-        }
-
-        colonne.append(tete, contenu);
-        return colonne;
-      }),
-    );
-
-    const services = servicesAppliques();
-    zoneServices.replaceChildren(
-      ...services.map((service) => {
-        const element = document.createElement("span");
-        element.className = "service";
-        element.textContent =
-          `Service ${service.nom} · ${service.type} · ${service.clusterIP}:${service.port} → ${service.portCible}` +
-          (service.nodePort ? ` · nodePort ${service.nodePort}` : "");
-        return element;
-      }),
-    );
+    const vivants = processus.filter((etat) => etat.vivant && etat.repond).length;
+    compteurs.textContent = `${vivants}/${processus.length} en état de répondre`;
+    grille.replaceChildren(...processus.map(carteProcessus));
   });
 
-  const detacherTrafic = observerTrafic((nomPod, status) => {
-    const carte = grille.querySelector<HTMLElement>(`.pod[data-nom="${CSS.escape(nomPod)}"]`);
+  const detacherTrafic = observerTrafic((nom, status) => {
+    const carte = grille.querySelector<HTMLElement>(`.processus[data-nom="${CSS.escape(nom)}"]`);
     if (!carte) return;
-    carte.classList.remove("pod-trafic", "pod-trafic-panne");
+    carte.classList.remove("processus-trafic", "processus-trafic-panne");
     void carte.offsetWidth;
-    carte.classList.add(status !== undefined && status >= 400 ? "pod-trafic-panne" : "pod-trafic");
-    setTimeout(() => carte.classList.remove("pod-trafic", "pod-trafic-panne"), 700);
+    carte.classList.add(
+      status !== undefined && status >= 400 ? "processus-trafic-panne" : "processus-trafic",
+    );
+    setTimeout(() => carte.classList.remove("processus-trafic", "processus-trafic-panne"), 700);
   });
 
   return () => {
-    detacherPods();
+    detacherProcessus();
     detacherTrafic();
   };
 }
 
-export function rendreMoitieBasse(hoteJournal: HTMLElement, hotePods: HTMLElement): () => void {
+export function rendreMoitieBasse(hoteJournal: HTMLElement, hoteProcessus: HTMLElement): () => void {
   const detacherJournal = rendreJournal(hoteJournal);
-  const detacherPods = rendrePods(hotePods);
+  const detacherProcessus = rendreProcessus(hoteProcessus);
   return () => {
     detacherJournal();
-    detacherPods();
+    detacherProcessus();
   };
 }
