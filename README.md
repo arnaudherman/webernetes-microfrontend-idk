@@ -432,8 +432,10 @@ ne l'est pas sans le dire. Deux nombres ne viennent pas de la mesure :
   — en dessous de 300 ms elle passe pour de la lenteur — et rester sous la seconde, sans
   quoi l'auditoire croit à un blocage.
 - **Le plancher d'animation de 250 ms de la pastille.** Un appel sur la boucle locale dure
-  quelques millisecondes, ce qui ne s'anime pas. Le compteur à côté montre la milliseconde
-  réelle. Réinjecter une latence dans l'appel lui-même serait refaire, sous un autre nom, la
+  quelques millisecondes, ce qui ne s'anime pas. Le compteur posé à côté ne montre pas cette
+  durée : il compte les traversées depuis le chargement de la page, et au-delà de 700 ms il
+  bascule sur l'attente en cours. La milliseconde réelle s'écrit en tête de page, dans la
+  zone d'état, sous la forme « 200 en 6 ms · 1 appel ». Réinjecter une latence dans l'appel lui-même serait refaire, sous un autre nom, la
   latence simulée que ce dispositif vient justement de supprimer.
 
 ### Mesures

@@ -29,10 +29,15 @@ const ETIQUETTE_BAS = "modularité serveur · quatre processus, un vrai réseau 
  * millisecondes, ce qui ne s'anime pas. La pastille reste donc allumée un quart de
  * seconde au minimum.
  *
- * C'est une durée de PRÉSENTATION, pas une durée mesurée, et la distinction est
- * affichée : le compteur à côté montre la milliseconde réelle. Réinjecter une latence
- * dans l'appel lui-même serait refaire exactement ce qu'on vient de supprimer, sous
- * un autre nom.
+ * C'est une durée de PRÉSENTATION, pas une durée mesurée, et la distinction reste
+ * affichée — mais pas ici. Le `compteur` posé à côté de la pastille ne montre AUCUNE
+ * durée d'appel : il compte les traversées de la session, et au-delà de
+ * `SEUIL_ATTENTE_VISIBLE_MS` il bascule sur l'attente en cours, en dixièmes de seconde.
+ * La milliseconde réelle s'écrit dans `#source-etat`, en tête de bande haute — « 200 en
+ * 6 ms · 1 appel » — alimenté par `traversee.ts`.
+ *
+ * Réinjecter une latence dans l'appel lui-même serait refaire exactement ce qu'on vient
+ * de supprimer, sous un autre nom.
  */
 const PLANCHER_ANIMATION_MS = 250;
 

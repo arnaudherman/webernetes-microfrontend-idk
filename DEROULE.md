@@ -102,6 +102,13 @@ Remonter au-dessus de la ligne. **Marquer un temps.**
 
 ### 4:30 · Essai 4 — la même faute, deux fois, sous la ligne
 
+**Remettre le sélecteur sur « via passerelle ».** Il est resté sur « appels directs »
+depuis 2:30, et un rechargement ne l'en sortirait pas : le mode est écrit dans l'URL.
+Sans ce geste, l'écran affiche **`200`** pendant qu'on annonce un refus — c'est-à-dire
+l'écran de 5:00, joué une étape trop tôt. **Relancer `charges` aussi** : le bouton 1
+affiche « relancer charges », rien ne l'a relancé tout seul, et un `charges` mort
+ajouterait une dégradation là où le verdict de 5:00 promet « aucun avertissement ».
+
 > « Je fais mentir `taches` : il sert un champ `etat` là où le contrat dit `statut`. Le nom
 > de la ressource n'a pas bougé, le code d'état est 200, le service est en parfaite santé. »
 
@@ -197,11 +204,13 @@ rien).
 npm run build && ls -l dist/assets/
 ```
 
-> « Un point de méthode avant de conclure. Tout ce que je viens de vous montrer tient dans
-> **un seul artefact JavaScript**, produit par **une seule** compilation. Mes quatre
-> fragments sont bien encapsulés, mais il n'existe qu'un objet à livrer, et aucune équipe
-> ne pourrait le livrer sans les trois autres. J'ai donc démontré une frontière, pas une
-> indépendance. »
+> « Un point de méthode avant de conclure. **La moitié haute** — les quatre fragments, le
+> shell, le bus — tient dans **un seul artefact JavaScript**, produit par **une seule**
+> compilation. Les quatre processus du bas n'y entrent pas : `npm run build` ne les
+> compile pas, `node` les lance depuis leurs propres fichiers, et vous venez d'en tuer un.
+> Mes quatre fragments sont bien encapsulés, mais il n'existe **qu'un objet à livrer pour
+> l'interface**, et aucune équipe ne pourrait le livrer sans les trois autres. J'ai donc
+> démontré une frontière, pas une indépendance. »
 
 > « Et attention au vocabulaire, parce que c'est là qu'on se trompe : ce qui rend un
 > changement atomique, c'est l'**artefact unique**, pas le dépôt unique. Un dépôt unique
@@ -245,7 +254,7 @@ artefacts compilés séparément l'importent.
 
 ```
 node empreintes.mjs
-sed -i '' 's/tableau v1/tableau v1 RECOMPILÉ SEUL/' equipe-tableau/src/mf-tableau.ts
+sed -i '' 's/tableau v1\.1/tableau v1.2 RECOMPILÉ SEUL/' equipe-tableau/src/mf-tableau.ts
 node construire.mjs equipe-tableau
 node empreintes.mjs
 ```
@@ -254,7 +263,12 @@ node empreintes.mjs
 > redémarré. Trois cent quatre-vingt-quatorze millisecondes au mur, dont trente-six
 > annoncées par le compilateur lui-même. »
 
-Recharger la page : le nouveau libellé apparaît, les autres fragments n'ont pas bougé.
+Recharger la page : **rien ne change — et c'est le résultat.** Le nouveau libellé est dans
+`equipe-tableau/dist/`, que personne ne sert : le port 5101 sert `equipe-tableau/publie/`,
+et le manifeste pointe une version publiée, donc immuable. Recompiler n'est pas déployer.
+
+*(Ce qu'il faut de gestes en plus pour amener ce libellé jusqu'au navigateur est exactement
+l'objet de 9:30 — ne pas le déflorer ici.)*
 
 **Annoncer immédiatement la limite, avant qu'on vous la demande :**
 
@@ -286,7 +300,7 @@ node basculer.mjs mf-tableau <une version antérieure>
 
 ```
 node basculer.mjs mf-tableau <version> --non-approuvee   puis recharger et vérifier
-node approuver.mjs --preuve "assemblée dans Chrome : 1 abonné atteint"
+node approuver.mjs --preuve "assemblée dans Chrome : 2 abonnés atteints, mf-tableau et mf-calcul"
 node basculer.mjs mf-tableau <version courante>          retour arrière, autorisé
 ```
 
@@ -295,10 +309,14 @@ node basculer.mjs mf-tableau <version courante>          retour arrière, autori
 
 Et la concession qui rend le reste crédible :
 
-> « Cette porte ne teste rien. Elle vérifie que les artefacts existent et correspondent à
-> leur empreinte, puis elle enregistre une déclaration humaine — comme les portes de
-> déploiement côté serveur. Une combinaison approuvée à la légère est une combinaison
-> approuvée. »
+> « Cette porte teste, mais mesurez ce que « tester » veut dire ici. Elle vérifie que les
+> artefacts existent et correspondent à leur empreinte, puis le shell charge la combinaison
+> dans le navigateur et joue quatre contrôles : les fragments montent, il n'existe qu'une
+> instance du socle, une charge conforme est acceptée, elle atteint un abonné. Le verdict
+> est posté, et un échec rend 409. Ce qu'elle ne dit pas, c'est que la combinaison est
+> juste : un test de fumée constate qu'elle démarre et que les messages passent. Il reste
+> aussi une porte manuelle, `approuver.mjs`, qui enregistre une déclaration humaine — aucune
+> des combinaisons du dépôt n'est passée par elle. »
 
 Puis les deux refus, dans cet ordre :
 
@@ -325,12 +343,14 @@ sautez pas : c'est le seul endroit où du WebAssembly tourne pour de vrai.**
 > fragment monte dans la page comme les autres et parle le même contrat. L'indépendance de
 > langage est donc réelle, et vous la voyez tourner. »
 
-> « Le fragment expose la même agrégation sous plusieurs formes d'appel : avec du JSON à
-> l'aller et au retour, et avec des tableaux typés. Entre les deux, le code Rust est
-> identique. Seule change la forme des données qu'on fait traverser la frontière — et
-> c'est cela qui décide du coût. C'est la thèse de toute ma présentation, transposée d'un
-> cran : **le prix d'une frontière ne tient pas au langage, il tient à ce qu'on lui fait
-> traverser.** »
+> « Le fragment expose la même agrégation par deux points d'entrée : `agreger_json`, qui
+> reçoit et rend du JSON, et `agreger_colonnes`, qui reçoit des tableaux typés parallèles
+> et rend un tableau plat de nombres. Ce ne sont pas deux appels au même code : ce sont
+> deux implémentations distinctes, parce que concevoir POUR la frontière change aussi les
+> structures qu'on emploie derrière — et c'est précisément le prix qu'on paie ou qu'on
+> évite. Ce qui décide du coût, c'est la forme de ce qu'on fait traverser. C'est la thèse
+> de toute ma présentation, transposée d'un cran : **le prix d'une frontière ne tient pas
+> au langage, il tient à ce qu'on lui fait traverser.** »
 
 Le coût d'entrée, à annoncer soi-même :
 
@@ -390,8 +410,15 @@ Cliquer un filtre. Montrer la ligne du journal :
 
 ```
 [REFUSÉ] filtre:change ← mf-filtres  {"etat":"en-cours"}
-         champ requis absent : statut · champ inattendu : etat
+         aucune version active ne convient (fenêtre : v1, v2)
+         · v1 : champ requis absent : statut · champ inattendu : etat
+         · v2 : champ requis absent : statut · champ requis absent : origine · champ inattendu : etat
 ```
+
+`filtre:change` est un contrat **versionné** — `actives: ["1", "2"]` — donc la charge est
+essayée contre chaque version de la fenêtre et le refus nomme l'écart version par version.
+Le shell écrit le tout sur une seule ligne ; le retrait ci-dessus n'est qu'un repli de
+lecture.
 
 > « Tout à l'heure, le tableau affichait neuf sur neuf et se croyait juste. Ici le message
 > est arrêté avant d'être remis, et l'écart est nommé. Vous reconnaissez la formulation :
@@ -402,10 +429,13 @@ Puis la question qui décide de tout, à poser vous-même :
 > « Qui possède ce schéma ? Si c'était le producteur, la vérification ne vaudrait rien :
 > l'équipe qui renomme le champ renommerait aussi son schéma, et le contrôle passerait. Il
 > vit donc dans le socle partagé — ce qui veut dire que **faire évoluer un contrat devient
-> une livraison du socle**, donc un point de synchronisation entre toutes les équipes. La
-> vérification ne supprime pas la coordination : elle la déplace, du moment où la panne se
-> produit vers le moment où le contrat change. C'est un bien meilleur moment, mais ce n'est
-> pas gratuit. »
+> une livraison du socle**. Ce n'est pas pour autant un rendez-vous : ce contrat est
+> versionné et déclare une fenêtre de migration, `actives: ["1", "2"]`. Une charge est
+> acceptée si elle satisfait n'importe laquelle des versions ouvertes, et chaque équipe
+> migre quand elle le décide — élargir, migrer, retirer. La vérification ne supprime pas la
+> coordination : elle la déplace, du moment où la panne se produit vers le moment où le
+> contrat change. C'est un bien meilleur moment, mais quelqu'un doit ouvrir la fenêtre,
+> surveiller qui n'a pas migré, et la fermer. »
 
 Retour à la version saine :
 
@@ -545,8 +575,14 @@ la page, et l'absence d'accès au DOM — ne bouge pas.)*
 ### « Votre maquette prouve-t-elle le déploiement indépendant ? »
 
 > « Elle prouve la résolution à l'exécution, la recompilation séparée, l'immuabilité
-> vérifiée par la plateforme et le refus d'une combinaison jamais assemblée. Elle ne prouve
-> pas la gouvernance : la porte enregistre une déclaration humaine, elle ne teste rien. »
+> vérifiée par la plateforme et le refus d'une combinaison jamais assemblée. La porte, elle,
+> teste : le shell charge la combinaison dans le navigateur, joue quatre contrôles — les
+> fragments montent, il n'existe qu'une instance du socle, une charge conforme est acceptée,
+> elle atteint un abonné — et poste son verdict ; le serveur refuse en 409 si le test
+> échoue. Les cinq combinaisons enregistrées portent toutes cette preuve, aucune une
+> signature humaine. Ce qu'elle ne prouve pas, c'est la justesse fonctionnelle : un test de
+> fumée constate qu'une combinaison démarre et que les messages passent, pas qu'elle est
+> juste. »
 
 ---
 

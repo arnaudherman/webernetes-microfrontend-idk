@@ -10,7 +10,7 @@ Elle répond à une question précise : **que faut-il, exactement, pour que plus
 
 **À dire avant de commencer, sous peine d'effondrement à la première question.**
 
-Elle prouve **quatre choses** :
+Elle prouve **sept choses** :
 
 1. La résolution à l'exécution existe, elle repose sur des **standards du web**, et elle
    permet à des artefacts compilés séparément de partager une dépendance sans qu'aucun
@@ -34,8 +34,11 @@ Elle prouve **quatre choses** :
    principale laisse passer en silence.
 
 Elle **ne prouve toujours pas tout** : il n'y a ni chaîne de livraison réelle, ni
-vérification du SENS des charges utiles (unités, invariants métier), ni gouvernance des
-contrats au sens organisationnel. Les artefacts sont servis depuis le même disque
+gouvernance des contrats au sens organisationnel. Quant au SENS des charges utiles, il
+n'est vérifié que là où quelqu'un l'a écrit — `valeurs` en ensemble fermé, `borne`,
+`entier` et des `regles` inter-champs existent bel et bien dans `socle/v3/contrats.js` —
+mais une unité portée par le NOM d'un champ, comme `chargeJours`, échapperait encore à
+tout validateur. Les artefacts sont servis depuis le même disque
 par le même processus ; le nombre de processus n'a aucune importance pour ce qui est
 démontré, mais il ne faut pas laisser croire l'inverse.
 
@@ -82,14 +85,21 @@ REFUS — cette combinaison n'a jamais été assemblée :
     mf-calcul@1.2.0 + mf-filtres@3.2.0 + mf-tableau@1.1.0 + socle@3.0
 ```
 
-Le cycle complet : `basculer --non-approuvee` pour assembler, vérifier dans le
-navigateur, puis `approuver.mjs --preuve "…"`. La preuve est obligatoire.
+Le cycle nominal ne demande rien à la main : `basculer --non-approuvee` assemble, et
+c'est le chargement de la page qui teste et enregistre. `approuver.mjs --preuve "…"`
+reste disponible comme porte manuelle — elle vérifie les empreintes et consigne une
+déclaration humaine, sans rien tester — mais aucune combinaison du dépôt n'en vient.
 
-**Ce que cette porte ne fait pas, et qu'il faut dire :** elle ne teste rien. Elle vérifie
-mécaniquement que chaque artefact existe et correspond à son empreinte, puis elle
-enregistre une **déclaration humaine** — exactement comme les portes de déploiement côté
-serveur, qui enregistrent le résultat d'une vérification faite ailleurs. Une combinaison
-approuvée à la légère est une combinaison approuvée.
+**Ce que cette porte fait, et ce qu'elle ne fait pas :** elle vérifie mécaniquement que
+chaque artefact existe et correspond à son empreinte, puis le shell **charge réellement la
+combinaison dans le navigateur** et joue quatre contrôles avant que le serveur ne
+l'enregistre — voir `shell/shell.js`. Le verdict est posté ; un échec rend 409 et
+l'assemblage n'est pas approuvé. Les cinq combinaisons de `combinaisons.json` portent
+toutes la même preuve, produite par ce test — aucune n'a été signée à la main.
+
+Ce qu'elle ne fait toujours pas : établir que la combinaison est **fonctionnellement
+juste**. Un test de fumée constate qu'elle démarre et que les messages passent. Le reste
+demande des tests que quelqu'un doit écrire, et cette maquette n'en écrit pas.
 
 ## Démarrage
 
@@ -119,8 +129,10 @@ conserve donc la version en service tant qu'elle est toujours publiée.
 
 Puis ouvrir <http://localhost:5100/>.
 
-Aucune dépendance à installer : `servir.mjs` et `empreintes.mjs` n'utilisent que
-`node:http`, `node:fs` et `node:crypto`. La construction réutilise le Vite déjà présent
+Aucune dépendance à installer : `servir.mjs` et `empreintes.mjs` n'importent aucun paquet
+npm — seulement des modules internes à Node (`node:http`, `node:fs/promises`,
+`node:crypto`, `node:path`, `node:url`) et, pour `servir.mjs`, le fichier voisin
+`combinaisons.mjs`. La construction réutilise le Vite déjà présent à la racine du dépôt. La construction réutilise le Vite déjà présent
 à la racine du dépôt. Tout fonctionne hors ligne.
 
 ## Les sept origines
@@ -169,33 +181,43 @@ artefacts compilés séparément l'importent.
 
 ```
 node empreintes.mjs
-sed -i '' 's/tableau v1/tableau v1.1 RECOMPILÉ SEUL/' equipe-tableau/src/mf-tableau.ts
+sed -i '' 's/tableau v1\.1/tableau v1.2 RECOMPILÉ SEUL/' equipe-tableau/src/mf-tableau.ts
 node construire.mjs equipe-tableau
 node empreintes.mjs
 ```
 
 **Une empreinte change. Les quatre autres sont identiques au bit près. Aucun serveur n'a
-été redémarré.** Recharger la page : le nouveau libellé apparaît, l'autre fragment n'a
-pas bougé.
+été redémarré.** En revanche **rien ne bouge encore à l'écran** : les serveurs d'équipe
+servent leur répertoire `publie/`, jamais leur `dist/`, et le manifeste pointe une URL
+versionnée sous `publie/`. Recompiler n'est pas déployer — c'est l'étape 4 bis qui met la
+nouvelle version en ligne.
 
-Mesure du 12 août 2026 : construction en 33 ms, artefact de 2 447 à 2 465 octets. Le
-même code reconstruit rend la même empreinte — la construction est déterministe.
+Mesure du 18 août 2026 : Vite annonce « built in 34 à 38 ms » ; la ligne « equipe-tableau
+construit en 383 à 407 ms » de `construire.mjs` mesure en plus le démarrage de `npx`.
+L'artefact du tableau passe de 3 198 à 3 216 octets — les 18 octets du nouveau libellé. Le
+même code reconstruit rend la même empreinte : la construction est déterministe.
 
 **4 bis. Déployer, revenir en arrière, et l'immuabilité.**
 
-L'équipe tableau publie sa 1.1.0 — elle seule, sans prévenir personne :
+L'équipe tableau publie sa 1.3.0 — elle seule, sans prévenir personne. Les 1.0.0, 1.1.0 et
+1.2.0 sont déjà publiées, et c'est la 1.2.0 qui est servie :
 
 ```
-sed -i '' 's/"version": "1.0.0"/"version": "1.1.0"/' equipe-tableau/package.json
+sed -i '' 's/"version": "1.2.0"/"version": "1.3.0"/' equipe-tableau/package.json
 node construire.mjs equipe-tableau && node publier.mjs
 ```
 
-Noter que **rien n'a changé à l'écran** : publier ne déploie pas. Puis :
+Noter que **rien n'a changé à l'écran** : publier ne déploie pas — `publier.mjs` le dit
+lui-même. Puis :
 
 ```
-node basculer.mjs mf-tableau 1.1.0     # recharger : la 1.1.0 apparaît
-node basculer.mjs mf-tableau 1.0.0     # recharger : la 1.0.0 est revenue
+node basculer.mjs mf-tableau 1.3.0                  # REFUS : combinaison jamais assemblée
+node basculer.mjs mf-tableau 1.3.0 --non-approuvee  # recharger : la 1.3.0 apparaît, le shell teste et enregistre
+node basculer.mjs mf-tableau 1.2.0                  # recharger : la 1.2.0 est revenue, déjà approuvée
 ```
+
+`--non-approuvee` n'est pas un confort : la porte refuse une combinaison qu'aucun
+navigateur n'a jamais assemblée. C'est le cycle nominal décrit plus haut.
 
 **62 ms de commande, zéro compilation, zéro redémarrage.** Les deux versions restent en
 ligne côte à côte, sous leurs URL respectives.
@@ -289,8 +311,15 @@ d'import ne se composent donc pas gratuitement.
 
 ```
 [REFUSÉ] filtre:change ← mf-filtres  {"etat":"en-cours"}
-         champ requis absent : statut · champ inattendu : etat
+         aucune version active ne convient (fenêtre : v1, v2)
+         · v1 : champ requis absent : statut · champ inattendu : etat
+         · v2 : champ requis absent : statut · champ requis absent : origine · champ inattendu : etat
 ```
+
+`filtre:change` est un contrat **versionné** — `actives: ["1", "2"]` — donc la charge est
+essayée contre chaque version de la fenêtre et le refus nomme l'écart version par version.
+Le shell écrit le tout sur une seule ligne ; le retrait ci-dessus n'est qu'un repli de
+lecture.
 
 C'est le même renommage que l'essai 5 de la démonstration principale. Là-bas, le tableau
 affiche « 9 sur 9 » et se croit juste. Ici, le message est arrêté et l'écart est nommé.
@@ -341,18 +370,20 @@ limite d'outillage, c'est une décision de modélisation.
 ## L'équipe calcul — l'indépendance de langage, et son prix
 
 Une cinquième équipe écrit sa logique en Rust, compilée en WebAssembly. Le fragment monte
-dans la page comme les autres, expose le même contrat, et son agrégation est exposée sous
-plusieurs formes d'appel : avec du JSON à l'aller et au retour, et avec des tableaux
-typés.
+dans la page comme les autres, expose le même contrat, et son agrégation est offerte par
+deux points d'entrée : `agreger_json`, qui reçoit et rend du JSON, et `agreger_colonnes`,
+qui reçoit des tableaux typés parallèles et rend un tableau plat de nombres. Ce ne sont pas
+deux appels au même code — ce sont deux implémentations distinctes, parce que concevoir
+POUR la frontière change aussi les structures qu'on emploie derrière.
 
 Ce que cette équipe établit :
 
 - **L'indépendance de langage est réelle.** Un fragment écrit dans un autre langage,
   compilé séparément, monte dans le même document et parle le même contrat.
 - **Le prix d'une frontière ne tient pas au langage, il tient à ce qu'on lui fait
-  traverser.** C'est la thèse du dépôt transposée d'un cran : entre deux appels au même
-  code Rust, seule change la forme des données qui franchissent la frontière, et c'est
-  cela qui décide du coût.
+  traverser.** C'est la thèse du dépôt transposée d'un cran : ce qui change entre les deux
+  points d'entrée, c'est la forme des données qui franchissent la frontière — et cette
+  forme décide à la fois du coût du passage et de la structure du code derrière.
 - **Il existe un coût d'entrée**, non nul et à télécharger à chaque visite : binaire wasm,
   glu de liaison, fragment. Les bibliothèques de sérialisation l'alourdissent.
   L'arbitrage doit être explicite.
