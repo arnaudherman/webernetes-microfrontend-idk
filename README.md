@@ -53,8 +53,8 @@ connexion.
 | `npm run services` | les quatre services seuls |
 | `npm run dev` | le serveur de développement seul |
 | `npm run recette` | **la vérification complète** — à lancer avant toute présentation |
-| `npm run typecheck` | trois passes : la page, les services, la maquette |
-| `npm run verifier-frontiere` | l'invariant d'architecture, voir plus bas |
+| `npm run typecheck` | quatre passes : la page, les pods, la surcouche de démo, la maquette |
+| `npm run verifier-frontiere` | les invariants d'architecture, voir plus bas |
 | `npm run build` | build de production |
 | `npm run preview` | sert le build de production |
 
@@ -252,65 +252,91 @@ distinguer : la forme des charges utiles n'est écrite nulle part qu'il puisse c
 ## Architecture
 
 ```
-src/
-├── main.ts                       amorçage, ordre de démarrage, câblage
-├── garde-reseau.ts               limite la page à quatre origines déclarées
+reel/                              ── CE QUI TOURNERAIT EN PRODUCTION ──
+├── adresses.json                 les quatre ports, source unique
+├── pods/                         ── TROIS PROCESSUS SUR QUATRE ──
+│   ├── _socle/
+│   │   ├── adresses.mjs          les adresses, côté processus
+│   │   └── socle-service.mjs     HTTP, journal NDJSON, client `node:http`
+│   ├── taches/
+│   │   ├── service.mjs           le pod réel : /sante, /taches — zéro panne
+│   │   └── donnees.mjs           les tâches de l'étude
+│   ├── charges/service.mjs       agrège — et ne valide rien, délibérément
+│   └── passerelle/service.mjs    corréler, dégrader, refuser
 │
-├── bas/                          ── MODULARITÉ SERVEUR ──
-│   ├── adresses.json             les quatre ports, source unique
-│   ├── adresses.ts               les adresses, côté navigateur
-│   ├── entetes.ts                corrélation, dégradation, exposition CORS
-│   ├── flux-console.ts           le flux NDJSON du journal, en `fetch`
-│   ├── journal-collecte.ts       le journal rapporté, et ce qu'il ne garantit pas
-│   ├── etat-processus.ts         vivant ≠ répond
-│   ├── rendu.ts                  journal, services, console
-│   ├── essais-bas.ts             essais 1 à 4
-│   ├── donnees/etude.mjs         les tâches de l'étude
-│   └── services/                 ── LES QUATRE PROCESSUS ──
-│       ├── console.mjs           établi : lance, collecte, sonde, commande
-│       ├── socle-service.mjs     HTTP, journal NDJSON, client `node:http`
-│       ├── taches.mjs            la source de vérité, et ses deux pannes
-│       ├── charges.mjs           agrège — et ne valide rien, délibérément
-│       └── passerelle.mjs        corréler, dégrader, refuser
-│
-├── frontiere/                    ── LE POINT DE TRAVERSÉE ──
-│   ├── traversee.ts              les deux modes, la mesure de l'écart
-│   ├── convergence.ts            qualification des erreurs, et sa limite
-│   └── vue-frontiere.ts          la ligne, les étiquettes, le sélecteur de mode
-│
-├── haut/                         ── MODULARITÉ DE L'INTERFACE ──
-│   ├── bus.ts                    abonner / publier, et rien d'autre
-│   ├── contrat.ts                le contrat déclaré par chaque fragment
-│   ├── shell.ts                  monte par nom de balise, injecte le bus
-│   ├── cadre-module.ts           affiche le contrat à l'écran
-│   ├── fragments/                mf-filtres, mf-tableau, mf-detail, mf-charge
-│   │                             + mf-filtres-v2 et mf-tableau-v2
-│   ├── rail.ts                   circulation des messages entre modules
-│   ├── journal-bus.ts            journal, sans colonne de code d'état
-│   └── essais-haut.ts            essais 5 à 8
-│
-├── essais/                       barre fixe et textes d'observation
-└── synthese/                     compteurs de session et panneau final
+└── interface/
+    ├── garde-reseau.ts           limite la page à quatre origines déclarées
+    │
+    ├── bas/                      ── MODULARITÉ SERVEUR, CÔTÉ NAVIGATEUR ──
+    │   ├── adresses.ts           les adresses, côté navigateur
+    │   ├── entetes.ts            corrélation, dégradation, exposition CORS
+    │   ├── flux-console.ts       le flux NDJSON du journal, en `fetch`
+    │   ├── journal-collecte.ts   le journal rapporté, et ce qu'il ne garantit pas
+    │   └── etat-processus.ts     vivant ≠ répond
+    │
+    ├── frontiere/                ── LE POINT DE TRAVERSÉE ──
+    │   ├── traversee.ts          les deux modes, la mesure de l'écart
+    │   └── convergence.ts        qualification des erreurs, et sa limite
+    │
+    └── haut/                     ── MODULARITÉ DE L'INTERFACE ──
+        ├── bus.ts                abonner / publier, et rien d'autre
+        ├── contrat.ts            le contrat déclaré par chaque fragment
+        ├── shell.ts              monte par nom de balise, injecte le bus
+        ├── journal-bus.ts        instrumentation du bus : compte, n'affiche rien
+        └── fragments/            mf-filtres, mf-tableau, mf-detail, mf-charge
+
+demo/                              ── LA SURCOUCHE DE DÉMONSTRATION ──
+├── console.mjs                   établi : lance, collecte, sonde, commande
+├── hooks/
+│   └── taches.mjs                compose le pod réel avec les deux pannes de `taches`
+└── frontend/
+    ├── main.ts                   amorçage, ordre de démarrage, câblage
+    ├── styles/                   les sept feuilles, chrome de l'écran
+    │
+    ├── bas/
+    │   ├── essais-bas.ts         essais 1 à 4
+    │   └── rendu.ts              journal, services, console
+    │
+    ├── frontiere/
+    │   └── vue-frontiere.ts      la ligne, les étiquettes, le sélecteur de mode
+    │
+    ├── haut/
+    │   ├── cadre-module.ts       affiche le contrat à l'écran
+    │   ├── rail.ts               circulation des messages entre modules
+    │   ├── rendu-journal-bus.ts  rendu du journal du bus, sans colonne de code d'état
+    │   ├── essais-haut.ts        essais 5 à 8
+    │   └── fragments/            mf-filtres-v2 et mf-tableau-v2
+    │
+    ├── essais/                   barre fixe et textes d'observation
+    └── synthese/                 compteurs de session et panneau final
 ```
 
-`frontiere/traversee.ts` s'appelait `passerelle.ts`. Le mot est désormais réservé au
-**processus** qui tourne sur 127.0.0.1:7200 et prend trois décisions ; ce module-là, lui,
-ne décide rien, il fait franchir. Deux choses du même nom dans une étude d'architecture,
-c'est une ambiguïté qui se paie en réunion.
+`reel/interface/frontiere/traversee.ts` s'appelait `passerelle.ts`. Le mot est désormais
+réservé au **processus** qui tourne sur 127.0.0.1:7200 et prend trois décisions ; ce
+module-là, lui, ne décide rien, il fait franchir. Deux choses du même nom dans une étude
+d'architecture, c'est une ambiguïté qui se paie en réunion.
 
-### Trois invariants, et un vérificateur
+`reel/` est ce qui tournerait sans salle ni public : chaque pod démarre seul
+(`node reel/pods/taches/service.mjs`), sans qu'aucune route ni aucun comportement de
+`demo/` ne soit joignable. `taches` est le seul des trois pods qui mélangeait les deux —
+ses deux pannes (`/contrat-rompu`, `/forme-rompue`) vivent maintenant dans
+`demo/hooks/taches.mjs`, qui compose le routeur réel plutôt que le remplacer.
 
-`npm run verifier-frontiere` lit les imports de tout `src/` et échoue si l'un des trois est
-rompu. C'est une assertion opposable, pas un commentaire. Il vérifie 30 modules.
+### Quatre invariants, et un vérificateur
 
-1. **Aucun module de `haut/` n'importe `bas/`, et réciproquement.** Seuls quatre modules
-   d'orchestration voient les deux moitiés — `main.ts`, `frontiere/traversee.ts`,
-   `essais/barre-essais.ts` et `synthese/compteurs.ts` — et uniquement pour câbler ou
-   déclencher.
+`npm run verifier-frontiere` lit les imports de tout `reel/interface/` et échoue si l'un
+des quatre est rompu. C'est une assertion opposable, pas un commentaire.
+
+1. **Aucun module de `haut/` n'importe `bas/`, et réciproquement.** Un seul module
+   d'orchestration voit les deux moitiés — `frontiere/traversee.ts` — et uniquement pour
+   câbler ou déclencher.
 2. **Aucun fragment n'importe le code d'un autre fragment.**
 3. **Un seul module fait passer une donnée du bas vers le haut** : `frontiere/traversee.ts`,
    par un appel vers la passerelle ou deux appels directs selon le mode. Rien au-dessus de
-   la ligne ne sait lequel : `src/haut` n'a pas une ligne de différence entre les deux.
+   la ligne ne sait lequel : `reel/interface/haut` n'a pas une ligne de différence entre
+   les deux.
+4. **Aucun module de `reel/` n'importe quoi que ce soit sous `demo/`.** La surcouche peut
+   dépendre du réel ; l'inverse ferait de « réel » une fiction.
 
 ### Deux garde-fous, qui sont des arguments
 
@@ -330,8 +356,8 @@ se dégrader en continuant d'avoir l'air de fonctionner.
 
 ### Pourquoi aucun type n'est partagé
 
-Le jeu de données vit sous `bas/`. Les fragments ne l'importent pas — **pas même le type
-`Tache`**. Chacun déclare, pour lui seul, la forme qu'il attend des charges utiles reçues.
+Le jeu de données vit sous `reel/pods/taches/`. Les fragments ne l'importent pas — **pas
+même le type `Tache`**. Chacun déclare, pour lui seul, la forme qu'il attend des charges utiles reçues.
 
 Ce n'est pas un oubli. Si un fragment importait le type de l'émetteur, l'essai 5 serait une
 erreur de compilation, et la démonstration s'effondrerait : le compilateur jouerait le rôle
@@ -441,7 +467,7 @@ ne l'est pas sans le dire. Deux nombres ne viennent pas de la mesure :
 ### Mesures
 
 Chrome 151, machine de développement, 200 échantillons par ligne. Les traversées répliquent
-exactement le code de `frontiere/traversee.ts`.
+exactement le code de `reel/interface/frontiere/traversee.ts`.
 
 | Mesure | moyenne | médiane | p99 |
 |---|---|---|---|
@@ -464,8 +490,8 @@ Autres grandeurs :
 | Mesure | Valeur |
 |---|---|
 | Démarrage de la page, jusqu'à `load` | 143 ms |
-| Artefact de production | 67 476 octets de JavaScript, 19 246 de CSS |
-| Recette complète | environ 9,3 s |
+| Artefact de production | 67 654 octets de JavaScript, 19 246 de CSS |
+| Recette complète | environ 11 s |
 
 Il n'y a plus de latence réseau simulée, plus de phase de convergence à attendre et plus de
 séquence de démarrage à commenter : les services tournent ou ne tournent pas, et la page le

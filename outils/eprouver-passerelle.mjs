@@ -19,7 +19,7 @@ import { spawn } from "node:child_process";
 import { request } from "node:http";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { PORTS } from "../src/bas/services/adresses.mjs";
+import { PORTS } from "../reel/pods/_socle/adresses.mjs";
 
 const RACINE = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -73,7 +73,7 @@ function constater(intitule, condition, vu) {
 
 /* ------------------------------------------------------- lancement des processus */
 
-const console_ = spawn(process.execPath, [join(RACINE, "src", "bas", "services", "console.mjs")], {
+const console_ = spawn(process.execPath, [join(RACINE, "demo", "console.mjs")], {
   cwd: RACINE,
   stdio: ["ignore", "pipe", "pipe"],
 });

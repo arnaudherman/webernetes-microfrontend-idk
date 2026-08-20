@@ -151,8 +151,12 @@ etape("artefact produit, sans Webernetes", () => {
 
 titre("Moitié basse — quatre processus");
 
-etape("typecheck des services", () =>
-  commande("npx", ["tsc", "--noEmit", "-p", "src/bas/services/tsconfig.json"]),
+etape("typecheck des pods", () =>
+  commande("npx", ["tsc", "--noEmit", "-p", "reel/pods/tsconfig.json"]),
+);
+
+etape("typecheck de la surcouche de démo", () =>
+  commande("npx", ["tsc", "--noEmit", "-p", "demo/tsconfig.json"]),
 );
 
 /**

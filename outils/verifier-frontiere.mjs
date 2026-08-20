@@ -5,10 +5,20 @@
  * La these de la demonstration est que les deux moities du depot ne se parlent pas.
  * Ce script en fait une assertion opposable plutot qu'un commentaire.
  *
- *   Invariant 1 — aucun module de src/haut n'importe src/bas, et reciproquement.
+ *   Invariant 1 — aucun module de reel/interface/haut n'importe reel/interface/bas,
+ *                 et reciproquement.
  *   Invariant 2 — aucun fragment n'importe le code d'un autre fragment.
  *   Invariant 3 — seuls les modules d'orchestration declares ci-dessous voient les
  *                 deux moities, et uniquement pour cabler ou declencher.
+ *   Invariant 4 — aucun module de reel/ n'importe quoi que ce soit sous demo/. La
+ *                 surcouche de demonstration peut dependre du reel ; l'inverse ferait
+ *                 de « reel/ » une fiction.
+ *
+ * Ce script ne balaie que reel/interface/ : c'est le seul endroit du depot ou les
+ * deux moities narratives (modularite serveur, modularite interface) coexistent
+ * encore reellement — la surcouche de demonstration (demo/frontend/) voit les deux
+ * par construction (elle assemble tout pour l'ecran) et n'a donc plus besoin d'etre
+ * declaree module par module.
  *
  * Usage : npm run verifier-frontiere
  */
@@ -18,7 +28,7 @@ import { join, relative, resolve, dirname, posix } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const RACINE = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const SRC = join(RACINE, "src");
+const SRC = join(RACINE, "reel", "interface");
 
 /**
  * Modules autorises a connaitre les deux moities.
@@ -28,13 +38,7 @@ const SRC = join(RACINE, "src");
  * decisions ; ce module-la, lui, ne decide rien, il fait franchir. Deux choses du meme
  * nom dans une etude d'architecture, c'est une ambiguite qui se paie en reunion.
  */
-const ORCHESTRATION = new Set([
-  "main.ts",
-  "frontiere/traversee.ts",
-  "essais/barre-essais.ts",
-  "synthese/compteurs.ts",
-  "synthese/panneau.ts",
-]);
+const ORCHESTRATION = new Set(["frontiere/traversee.ts"]);
 
 async function fichiersTypeScript(repertoire) {
   const trouves = [];
@@ -93,6 +97,15 @@ for (const absolu of fichiers) {
     if (fichier.startsWith("haut/fragments/") && cible.startsWith("haut/fragments/")) {
       violations.push(`${fichier} importe ${cible} : un fragment ne doit pas importer un autre fragment.`);
     }
+
+    // Invariant 4 — un chemin relatif qui, une fois resolu depuis reel/interface,
+    // retombe sur un segment "demo/" a quitte le reel. Le suffixe ".ts" que
+    // `resoudre()` ajoute en bout de chaine (y compris sur un import .json — un
+    // artefact preexistant de cette fonction) ne modifie jamais un segment
+    // intermediaire : ce test reste correct malgre lui.
+    if (/(^|\/)demo\//.test(cible)) {
+      violations.push(`${fichier} importe ${cible} : un module réel ne doit jamais importer la démo.`);
+    }
   }
 
   if (zonesVues.has("haut") && zonesVues.has("bas")) {
@@ -116,4 +129,5 @@ if (violations.length > 0) {
 
 console.log(`\nFrontiere respectee — ${total} modules verifies.`);
 console.log(`Modules voyant les deux moities : ${passerelles.length === 0 ? "aucun" : passerelles.join(", ")}`);
-console.log("Aucun module de src/haut ne connait src/bas, et reciproquement.\n");
+console.log("Aucun module de reel/interface/haut ne connait reel/interface/bas, et reciproquement.");
+console.log("Aucun module de reel/ n'importe demo/.\n");

@@ -16,5 +16,5 @@
     "noEmit": true,
     "types": []
   },
-  "include": ["src"]
+  "include": ["reel/interface", "demo/frontend"]
 }

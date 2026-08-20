@@ -29,7 +29,8 @@ import { join, relative, resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const RACINE = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const SRC = join(RACINE, "src");
+const REEL = join(RACINE, "reel", "interface");
+const DEMO = join(RACINE, "demo", "frontend");
 
 /**
  * Les seuls elements en ligne autorises a porter une bordure : ce sont des controles.
@@ -56,20 +57,24 @@ async function fichiers(repertoire, suffixes) {
 }
 
 /**
- * Rassemble le CSS du depot : les feuilles de `src/styles`, ET les gabarits `STYLE`
- * des fragments, qui vivent dans le Shadow DOM et qu'aucun outil ne regarde.
+ * Rassemble le CSS du depot : les feuilles de `demo/frontend/styles`, ET les gabarits
+ * `STYLE` des fragments — reels (`reel/interface/haut/fragments`) et de demonstration
+ * (`demo/frontend/haut/fragments`, les variantes v2) — qui vivent dans le Shadow DOM et
+ * qu'aucun outil ne regarde.
  */
 async function sourcesCss() {
   const sources = [];
 
-  for (const chemin of await fichiers(join(SRC, "styles"), [".css"])) {
+  for (const chemin of await fichiers(join(DEMO, "styles"), [".css"])) {
     sources.push({ nom: relative(RACINE, chemin), css: await readFile(chemin, "utf8") });
   }
 
-  for (const chemin of await fichiers(join(SRC, "haut", "fragments"), [".ts"])) {
-    const source = await readFile(chemin, "utf8");
-    const gabarit = source.match(/const STYLE = `([\s\S]*?)`;/);
-    if (gabarit) sources.push({ nom: `${relative(RACINE, chemin)} (Shadow DOM)`, css: gabarit[1] });
+  for (const racineFragments of [join(REEL, "haut", "fragments"), join(DEMO, "haut", "fragments")]) {
+    for (const chemin of await fichiers(racineFragments, [".ts"])) {
+      const source = await readFile(chemin, "utf8");
+      const gabarit = source.match(/const STYLE = `([\s\S]*?)`;/);
+      if (gabarit) sources.push({ nom: `${relative(RACINE, chemin)} (Shadow DOM)`, css: gabarit[1] });
+    }
   }
 
   return sources;

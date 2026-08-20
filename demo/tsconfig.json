@@ -1,0 +1,24 @@
+{
+  "//": [
+    "Le superviseur (console.mjs) et le hook de démo (hooks/taches.mjs) sont des",
+    "processus Node tout aussi réels dans leur exécution que les pods — voir",
+    "reel/pods/tsconfig.json pour la raison de ce filet, identique ici : Node n'a pas",
+    "de compilateur, et il n'y a aucune raison de découvrir en salle qu'un champ",
+    "s'appelle autrement qu'on croyait."
+  ],
+  "compilerOptions": {
+    "target": "ES2023",
+    "lib": ["ESNext"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "allowJs": true,
+    "checkJs": true,
+    "strict": true,
+    "noFallthroughCasesInSwitch": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "noEmit": true,
+    "types": ["node"]
+  },
+  "include": ["console.mjs", "hooks/*.mjs"]
+}

@@ -24,7 +24,7 @@ mesurable.*
 | Les versions du jour | `node basculer.mjs` sans argument : il liste les versions publiées et **encadre celle qui est servie**. Lisez-les là, jamais dans ce document |
 | Répétition | **deux fois, chronomètre en main** |
 
-Si un port est occupé : `pkill -f "src/bas/services"`, `pkill -f servir.mjs`, `pkill -f vite`.
+Si un port est occupé : `pkill -f "reel/pods"`, `pkill -f "demo/"`, `pkill -f servir.mjs`, `pkill -f vite`.
 
 ---
 
